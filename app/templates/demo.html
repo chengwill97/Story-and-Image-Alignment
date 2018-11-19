@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container"></div>
+<div class="jumbotron">
+<h1 class="display-4">Your Story and Images are Aligned!</h1>
+
+{% if num_images %}
+    <button type="button" class="btn btn-primary">Images <span class="badge badge-light">{{ num_images }}</span></button>
+{% else %}
+    <button type="button" class="btn btn-secondary">Images <span class="badge badge-light">{{ num_images }}</span></button>
+{% endif %}
+
+{% if num_texts %}
+    <button type="button" class="btn btn-primary">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
+{% else %}
+    <button type="button" class="btn btn-secondary">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
+{% endif %}
+
+<hr>
+
+{% for random in randomized %}
+    {% if random.type %}
+        <img src="data:{{random.type}}};base64,{{random.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
+    {% else %}
+        <p> {{ random }} </p>
+    {% endif %}
+{% endfor %}
+
+
+{% endblock %}
