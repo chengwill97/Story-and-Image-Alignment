@@ -19,11 +19,11 @@
 
 <hr>
 
-{% for random in randomized %}
-    {% if random.type %}
-        <img src="data:{{random.type}}};base64,{{random.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
+{% for result in results %}
+    {% if result.type %}
+        <img src="data:{{result.type}}};base64,{{result.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
     {% else %}
-        <p> {{ random }} </p>
+        <p> {{ result }} </p>
     {% endif %}
 {% endfor %}
 

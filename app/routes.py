@@ -12,7 +12,16 @@ from flask import request
 
 from app import app
 
-TEMP_DATA_PATH = os.environ['TEMP_DATA_PATH']
+from app.sandi.demo import SandiWorkflow
+
+@app.before_first_request
+def initServer():
+    app.logger.info('Setting up server')
+
+    global model
+    model = SandiWorkflow.load_model()
+
+    app.logger.info('Server set up')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -29,24 +38,10 @@ def demo():
 
     if request.method == 'POST':
 
-        # Create new folder to store images
-        folder = None
-        folder_ind = 0
-        while True:
-            try:
-                folder = os.path.join(TEMP_DATA_PATH, str(folder_ind))
-                os.mkdir(folder)
-                break
-            except Exception:
-                folder_ind += 1
-                pass
-
         # Collect images
         for input_image in request.files.getlist('images'):
-            image_bytes = io.BytesIO(input_image.read())
-            image_encoded = base64.b64encode(image_bytes.read()).decode('ascii')
-
-            image_data = {'data': image_encoded, 'type': input_image.content_type}
+            image_bytes = io.BytesIO(input_image.read()).read()
+            image_data = {'data': image_bytes, 'type': input_image.content_type}
             images[input_image.filename] = image_data
 
         app.logger.info('Collected {num_images} images'.format(num_images=len(images)))
@@ -58,28 +53,18 @@ def demo():
 
         app.logger.info('Collected {num_texts} paragraphs'.format(num_texts=len(paragraphs)))
 
-        app.logger.info('Randoming images and text')
+        demo = SandiWorkflow(images, paragraphs)
 
-        image_names = list(images.keys())
-        randomized_ind = random.sample(range(0, len(paragraphs)-1), len(images))
+        demo.run_yolo(model)
 
-        cur_ind = 0
-        for i in range(len(paragraphs)):
-            randomized.append(paragraphs[i])
-            if i in randomized_ind:
-                randomized.append(images[image_names[cur_ind]])
-                cur_ind += 1
+        results = demo.randomize()
 
-        # Remove directory
-        try:
-            shutil.rmtree(folder)
-        except Exception:
-            pass
+        demo.clean_up()
 
     app.logger.info('Handled Demo Request')
 
     return render_template('demo.html',
                             num_images=len(images),
                             num_texts=len(paragraphs),
-                            randomized=randomized)
+                            results=results)
 
