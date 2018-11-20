@@ -35,6 +35,8 @@ class SandiWorkflow:
     def run(self):
         self.yolo.run(self.images, self.folder)
 
+        self.scene.run(self.images)
+
     def create_temp_folder(self):
         app.logger.debug('Creating temporary directory')
         self.folder = None
