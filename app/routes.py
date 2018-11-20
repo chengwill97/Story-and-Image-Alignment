@@ -18,8 +18,9 @@ from app.sandi.demo import SandiWorkflow
 def initServer():
     app.logger.info('Setting up server')
 
-    global model
-    model = SandiWorkflow.load_model()
+    global yolo_model, scene_net
+    yolo_model = SandiWorkflow.load_yolo_model()
+    scene_net = SandiWorkflow.load_scene_net()
 
     app.logger.info('Server set up')
 
@@ -34,7 +35,6 @@ def demo():
 
     images = dict()
     paragraphs = list()
-    randomized = list()
 
     if request.method == 'POST':
 
@@ -44,22 +44,23 @@ def demo():
             image_data = {'data': image_bytes, 'type': input_image.content_type}
             images[input_image.filename] = image_data
 
-        app.logger.info('Collected {num_images} images'.format(num_images=len(images)))
+        app.logger.debug('Collected {num_images} images'.format(num_images=len(images)))
 
         # Collect paragraphs
         for input_text in request.files.getlist('texts'):
             text = input_text.read().decode('cp1252')
             paragraphs += text.split('\n')
 
-        app.logger.info('Collected {num_texts} paragraphs'.format(num_texts=len(paragraphs)))
+        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(paragraphs)))
 
-        demo = SandiWorkflow(images, paragraphs)
+        # Initialize workflow for SANDI demo
+        demo = SandiWorkflow(images, paragraphs, yolo_model, None)
 
-        demo.run_yolo(model)
+        demo.run()
 
         results = demo.randomize()
 
-        demo.clean_up()
+        # demo.clean_up()
 
     app.logger.info('Handled Demo Request')
 
