@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-# import caffe
+import caffe
 import pickle
 
 from app import app

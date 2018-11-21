@@ -28,7 +28,7 @@ class Yolo:
                 for box in boxes:
                     tags.add(box[1])
 
-                yolo_result.append(','.join(list(tags)) or ',')
+                yolo_result.append(', '.join(list(tags)) or ',')
 
                 app.logger.debug('Analyzed image {filename} {results}'.format(filename=filename, results=yolo_result[1]))
 

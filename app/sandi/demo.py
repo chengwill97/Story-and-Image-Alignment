@@ -35,7 +35,7 @@ class SandiWorkflow:
     def run(self):
         self.yolo.run(self.images, self.folder)
 
-        self.scene.run(self.images)
+        self.scene.run(self.images, self.folder)
 
     def create_temp_folder(self):
         app.logger.debug('Creating temporary directory')
@@ -46,7 +46,7 @@ class SandiWorkflow:
                 self.folder = os.path.join(os.environ['TEMP_DATA_PATH'], str(folder_ind))
                 os.mkdir(self.folder)
                 break
-            except Exception:
+            except OSError:
                 folder_ind += 1
                 pass
 

@@ -18,10 +18,21 @@ from app.sandi.demo import SandiWorkflow
 def initServer():
     app.logger.info('Setting up server')
 
+    app.logger.debug('Creating data directory')
+
+    temp_data_path = os.path.abspath(os.environ['TEMP_DATA_PATH'])
+    try:
+        os.mkdir(temp_data_path)
+    except OSError:
+        if not os.path.isdir(temp_data_path):
+            app.logger.warn('Error creating directory {}'.format(temp_data_path))
+
+    app.logger.debug('Loading models and nets')
+
     global yolo_model, scene_net
     yolo_model = SandiWorkflow.load_yolo_model()
     scene_net = SandiWorkflow.load_scene_net()
-
+ 
     app.logger.info('Server set up')
 
 @app.route('/', methods=['GET', 'POST'])
