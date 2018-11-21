@@ -17,8 +17,6 @@ class Yolo:
 
             for filename, image in images.items():
 
-                app.logger.debug('Analyzing image {filename}'.format(filename=filename))
-
                 tags = set()
                 yolo_result = [filename]
                 yolo_image = lightnet.Image.from_bytes(image['data'])

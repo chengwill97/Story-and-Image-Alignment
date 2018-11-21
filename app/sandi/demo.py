@@ -29,8 +29,8 @@ class SandiWorkflow:
         app.logger.debug('Saving paragraphs to: %s', self.folder)
 
         with open(os.path.join(self.folder, 'paragraphs.txt'), 'w') as f:
-            for paragraph in self.paragraphs:
-                f.write('{paragraph}\n'.format(paragraph=paragraph))
+            for index, paragraph in enumerate(self.paragraphs):
+                f.write('{index}\t{paragraph}\n'.format(index=index, paragraph=paragraph.encode('utf8')))
 
     def run(self):
         self.yolo.run(self.images, self.folder)
