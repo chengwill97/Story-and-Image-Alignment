@@ -1,9 +1,12 @@
 import os
+import io
 import shutil
 import random
 import base64
 
 import lightnet
+
+from flask import request
 
 from app import app
 
@@ -12,80 +15,155 @@ from app.sandi.yolo.yolo                import Yolo
 
 class SandiWorkflow:
 
-    def __init__(self, images, paragraphs, yolo_model, scene_net):
-        self.images = images
-        self.paragraphs = paragraphs
-        self.yolo_model = yolo_model
-        self.scene_net = scene_net
-        self.folder = None
+    TEMP_DATA_PATH  = os.environ['TEMP_DATA_PATH']
+    FILENAME_TAGS   = os.environ['FILENAME_TAGS']
+    FILENAME_TEXT   = os.environ['FILENAME_TEXT']
+    TAGS_DELIM      = os.environ['TAGS_DELIM']
 
-        self.yolo = Yolo(yolo_model)
-        self.scene = SceneDetection(scene_net)
+    IMAGES_FOLDER   = 'images'
 
-        app.logger.info('Starting SANDI pipeline')
+    def __init__(self, yolo_resources=None, scene_resources=None):
+        self.images_base64      = dict()
+        self.paragraphs         = list()
+        self.folder             = None
+        self.yolo_resources     = yolo_resources
+        self.scene_resources    = scene_resources
+        self.yolo               = Yolo(self.yolo_resources)
+        self.scene              = SceneDetection(self.scene_resources)
 
-        self.create_temp_folder()
+        app.logger.info('Initiating SANDI pipeline')
 
-        app.logger.debug('Saving paragraphs to: %s', self.folder)
+        # Create directory to store results and images
 
-        with open(os.path.join(self.folder, 'paragraphs.txt'), 'w') as f:
+        self.create_data_folder()
+
+    def run(self):
+
+        app.logger.info('Running SANDI pipeline')
+        
+        # Obtain tags from the yolo and scene detection models
+
+        yolo_tags = self.yolo.run(self.images_base64)
+
+        scene_detection_tags = self.scene.run(self.images_base64.keys(), self.folder)
+
+        # Combine then save tags to folder
+
+        app.logger.debug('Combining tags from yolo and scene detection')
+
+        try:
+            app.logger.debug('Saving tags to: %s', self.folder)
+
+            with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
+
+                for filename in self.images_base64.keys():
+
+                    union_tags = set()
+
+                    try:
+                        union_tags.update(yolo_tags[filename])
+                    except KeyError:
+                        pass
+
+                    try:
+                        union_tags.update(scene_detection_tags[filename])
+                    except KeyError:
+                        pass
+
+                    f.write('{filename}\t{union_tags}\n'.format(filename=filename,
+                                                                union_tags=(SandiWorkflow.TAGS_DELIM.join(union_tags)) or SandiWorkflow.TAGS_DELIM))
+        except Exception as e:
+
+            app.logger.exception(e)
+
+        app.logger.info('Finished SANDI pipeline')
+
+    def collect_uploaded_images(self, uploaded_images):
+        
+        app.logger.debug('Savings images')
+
+        for upload in uploaded_images:
+
+            upload.save(os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, upload.filename))
+
+            upload.seek(0)
+
+            upload_bytes = io.BytesIO(upload.read()).read()
+
+            image_data = {'data': upload_bytes, 'type': upload.content_type}
+
+            self.images_base64[upload.filename] = image_data
+
+        app.logger.debug('Collected {num_images} images'.format(num_images=len(uploaded_images)))    
+
+    def collect_uploaded_texts(self, uploaded_texts):
+
+        app.logger.debug('Saving paragraphs')
+
+        self.paragraphs = list()
+
+        for input_text in request.files.getlist('texts'):
+            self.paragraphs += input_text.read().decode('cp1252').split('\n')
+
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'w') as f:
             for index, paragraph in enumerate(self.paragraphs):
                 f.write('{index}\t{paragraph}\n'.format(index=index, paragraph=paragraph.encode('utf8')))
 
-    def run(self):
-        self.yolo.run(self.images, self.folder)
+        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(self.paragraphs)))        
 
-        self.scene.run(self.images, self.folder)
+    def create_data_folder(self):
 
-    def create_temp_folder(self):
-        app.logger.debug('Creating temporary directory')
+        app.logger.debug('Creating data directory')
+
         self.folder = None
         folder_ind = 0
         while True:
             try:
-                self.folder = os.path.join(os.environ['TEMP_DATA_PATH'], str(folder_ind))
+                self.folder = os.path.join(SandiWorkflow.TEMP_DATA_PATH, str(folder_ind))
                 os.mkdir(self.folder)
+                os.mkdir(os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
                 break
             except OSError:
                 folder_ind += 1
                 pass
 
-        app.logger.debug('Temporary directory created')
+        app.logger.debug('Data directory created at {dir}'.format(dir=self.folder))
 
-    def remove_temp_folder(self):
+    def clean_up(self):
+
+        app.logger.debug('Erasing data directory')
+        
         try:
             shutil.rmtree(self.folder)
         except Exception:
             pass
-
-    def clean_up(self):
-        self.remove_temp_folder()
 
     def randomize(self):
 
         app.logger.info('Randomizing images and text')
 
         randomized = list()
-        image_names = list(self.images.keys())
+        image_names = list(self.images_base64.keys())
 
         # sample random numbers
-        randomized_ind = random.sample(range(0, len(self.paragraphs)-1), len(self.images))
+        randomized_ind = random.sample(range(0, len(self.paragraphs)-1), len(self.images_base64))
 
         cur_ind = 0
         for i in range(len(self.paragraphs)):
             randomized.append(self.paragraphs[i])
             if i in randomized_ind:
                 file_name = image_names[cur_ind]
-                image64 = base64.b64encode(self.images[file_name]['data']).decode('ascii')
-                randomized.append({'data': image64, 'type': self.images[file_name]['type']})
+                image_bytes = self.images_base64[file_name]['data']
+                image64 = base64.b64encode(image_bytes).decode('ascii')
+                randomized.append({'data': image64, 'type': self.images_base64[file_name]['type']})
                 cur_ind += 1
 
         return randomized
 
     @staticmethod
-    def load_yolo_model():
-        return Yolo.load_model()
+    def load_yolo_resources():
+        return Yolo.load_resources()
 
     @staticmethod
-    def load_scene_net():
-        return SceneDetection.load_net()
+    def load_scene_resources():
+        return SceneDetection.load_resources()

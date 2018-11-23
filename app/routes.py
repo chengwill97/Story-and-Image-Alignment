@@ -3,12 +3,12 @@ import io
 import shutil
 import base64
 import random
+import cv2
+import numpy as np
 
-from flask import render_template
-from flask import flash
-from flask import redirect
-from flask import url_for
-from flask import request
+import lightnet
+
+from flask import (render_template, flash, redirect, url_for, request)
 
 from app import app
 
@@ -18,7 +18,7 @@ from app.sandi.demo import SandiWorkflow
 def initServer():
     app.logger.info('Setting up server')
 
-    app.logger.debug('Creating data directory')
+    app.logger.debug('Setting up data directory')
 
     temp_data_path = os.path.abspath(os.environ['TEMP_DATA_PATH'])
     try:
@@ -27,11 +27,11 @@ def initServer():
         if not os.path.isdir(temp_data_path):
             app.logger.warn('Error creating directory {}'.format(temp_data_path))
 
-    app.logger.debug('Loading models and nets')
+    app.logger.debug('Setting up models and nets ')
 
-    global yolo_model, scene_net
-    yolo_model = SandiWorkflow.load_yolo_model()
-    scene_net = SandiWorkflow.load_scene_net()
+    global yolo_resources, scene_resources
+    yolo_resources  = SandiWorkflow.load_yolo_resources()
+    scene_resources = SandiWorkflow.load_scene_resources()
  
     app.logger.info('Server set up')
 
@@ -49,31 +49,27 @@ def demo():
 
     if request.method == 'POST':
 
-        # Collect images
-        for input_image in request.files.getlist('images'):
-            image_bytes = io.BytesIO(input_image.read()).read()
-            image_data = {'data': image_bytes, 'type': input_image.content_type}
-            images[input_image.filename] = image_data
-
-        app.logger.debug('Collected {num_images} images'.format(num_images=len(images)))
-
-        # Collect paragraphs
-        for input_text in request.files.getlist('texts'):
-            text = input_text.read().decode('cp1252')
-            paragraphs += text.split('\n')
-
-        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(paragraphs)))
-
         # Initialize workflow for SANDI demo
-        demo = SandiWorkflow(images, paragraphs, yolo_model, None)
+
+        demo = SandiWorkflow(yolo_resources=yolo_resources, scene_resources=scene_resources)
+        
+        # Gather and save images and text files
+
+        demo.collect_uploaded_images(request.files.getlist('images'))
+
+        demo.collect_uploaded_texts(request.files.getlist('texts'))
+
+        # Get tags from yolo and caffe
 
         demo.run()
 
+        # Order images and text randomly
+
         results = demo.randomize()
 
-        # demo.clean_up()
-
     app.logger.info('Handled Demo Request')
+
+    # return render_template('homepage.html')
 
     return render_template('demo.html',
                             num_images=len(images),
