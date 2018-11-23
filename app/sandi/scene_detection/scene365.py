@@ -33,9 +33,10 @@ class SceneDetection:
         
         for filename in filenames:
 
-            image_path = os.path.join(images_dir, 'images', filename)
+            image_path = os.path.join(images_dir, filename)
 
-            im = self.load_image(image_path) 
+            # im = self.load_image(image_path) 
+            im = caffe.io.load_image(image_path)
 
             # load the image in the data layer
             net.blobs['data'].data[...] = transformer.preprocess('data', im)
@@ -48,7 +49,7 @@ class SceneDetection:
             try:
                 scene_detection_tags[filename] = set(labels[top_k[0]].split('_'))
 
-                # app.logger.debug('Analyzed image {filename}: {results}'.format(filename=filename, results=scene_detection_tags[filename]))
+                app.logger.debug('Scene tags {filename}: {results}'.format(filename=filename, results=scene_detection_tags[filename]))
             except Exception:
                 pass
 

@@ -29,9 +29,10 @@ def initServer():
 
     app.logger.debug('Setting up models and nets ')
 
-    global yolo_resources, scene_resources
+    global yolo_resources, scene_resources, quote_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
+    quote_resources = SandiWorkflow.load_quote_resources()
  
     app.logger.info('Server set up')
 
@@ -51,28 +52,26 @@ def demo():
 
         # Initialize workflow for SANDI demo
 
-        demo = SandiWorkflow(yolo_resources=yolo_resources, scene_resources=scene_resources)
+        demo = SandiWorkflow(yolo_resources=yolo_resources, 
+                             scene_resources=scene_resources,
+                             quote_resources=quote_resources)
         
         # Gather and save images and text files
-
         demo.collect_uploaded_images(request.files.getlist('images'))
-
         demo.collect_uploaded_texts(request.files.getlist('texts'))
 
         # Get tags from yolo and caffe
-
         demo.run()
 
+        # Get reccomended quotes
+        quotes = demo.get_quotes()
+
         # Order images and text randomly
-
-        results = demo.randomize()
-
+        results = demo.randomize(quotes=quotes)
+            
     app.logger.info('Handled Demo Request')
-
-    # return render_template('homepage.html')
 
     return render_template('demo.html',
                             num_images=len(images),
                             num_texts=len(paragraphs),
                             results=results)
-

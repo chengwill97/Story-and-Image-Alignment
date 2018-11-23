@@ -12,6 +12,7 @@ from app import app
 
 from app.sandi.scene_detection.scene365 import SceneDetection
 from app.sandi.yolo.yolo                import Yolo
+from app.sandi.quotes.quote_rec         import Quotes
 
 class SandiWorkflow:
 
@@ -22,14 +23,16 @@ class SandiWorkflow:
 
     IMAGES_FOLDER   = 'images'
 
-    def __init__(self, yolo_resources=None, scene_resources=None):
+    def __init__(self, yolo_resources=None, scene_resources=None, quote_resources=None):
         self.images_base64      = dict()
         self.paragraphs         = list()
         self.folder             = None
         self.yolo_resources     = yolo_resources
         self.scene_resources    = scene_resources
-        self.yolo               = Yolo(self.yolo_resources)
+        self.quote_resources    = quote_resources
+        self.yolo               = Yolo          (self.yolo_resources)
         self.scene              = SceneDetection(self.scene_resources)
+        self.quote              = Quotes        (self.quote_resources)
 
         app.logger.info('Initiating SANDI pipeline')
 
@@ -45,7 +48,7 @@ class SandiWorkflow:
 
         yolo_tags = self.yolo.run(self.images_base64)
 
-        scene_detection_tags = self.scene.run(self.images_base64.keys(), self.folder)
+        scene_detection_tags = self.scene.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         # Combine then save tags to folder
 
@@ -77,6 +80,12 @@ class SandiWorkflow:
             app.logger.exception(e)
 
         app.logger.info('Finished SANDI pipeline')
+
+    def get_quotes(self):
+        
+        quotes = self.quote.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+
+        return quotes
 
     def collect_uploaded_images(self, uploaded_images):
         
@@ -138,7 +147,7 @@ class SandiWorkflow:
         except Exception:
             pass
 
-    def randomize(self):
+    def randomize(self, quotes=None):
 
         app.logger.info('Randomizing images and text')
 
@@ -155,7 +164,14 @@ class SandiWorkflow:
                 file_name = image_names[cur_ind]
                 image_bytes = self.images_base64[file_name]['data']
                 image64 = base64.b64encode(image_bytes).decode('ascii')
-                randomized.append({'data': image64, 'type': self.images_base64[file_name]['type']})
+                
+                randomized.append({'file_name': file_name,'data': image64, 'type': self.images_base64[file_name]['type']})
+
+                if quotes:
+                    randomized[-1]['quote'] = quotes[file_name]
+
+                    app.logger.debug('Appending quote {quote} to {file_name}'.format(quote=quotes[file_name],file_name=file_name))
+
                 cur_ind += 1
 
         return randomized
@@ -167,3 +183,7 @@ class SandiWorkflow:
     @staticmethod
     def load_scene_resources():
         return SceneDetection.load_resources()
+
+    @staticmethod
+    def load_quote_resources():
+        return Quotes.load_resources()

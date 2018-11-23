@@ -22,7 +22,7 @@ class Yolo:
 
             yolo_tags[filename] = set([box[1] for box in boxes])
 
-            app.logger.debug('Analyzed image {filename}: {results}'.format(filename=filename, results=yolo_tags[filename]))
+            app.logger.debug('Yolo tags {filename}: {results}'.format(filename=filename, results=yolo_tags[filename]))
 
         app.logger.info('Finished yolo analysis')
 
