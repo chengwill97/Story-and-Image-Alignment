@@ -45,16 +45,13 @@ def demo():
 
     app.logger.info('Handling Demo Request')
 
-    images = dict()
-    paragraphs = list()
+    # Initialize workflow for SANDI demo
+
+    demo = SandiWorkflow(yolo_resources=yolo_resources, 
+                            scene_resources=scene_resources,
+                            quote_resources=quote_resources)
 
     if request.method == 'POST':
-
-        # Initialize workflow for SANDI demo
-
-        demo = SandiWorkflow(yolo_resources=yolo_resources, 
-                             scene_resources=scene_resources,
-                             quote_resources=quote_resources)
         
         # Gather and save images and text files
         demo.collect_uploaded_images(request.files.getlist('images'))
@@ -63,15 +60,19 @@ def demo():
         # Get tags from yolo and caffe
         demo.run()
 
-        # Get reccomended quotes
-        quotes = demo.get_quotes()
+        if 'include_quotes' in request.form:
+            # Get reccomended quotes
+            quotes = demo.get_quotes()
 
-        # Order images and text randomly
-        results = demo.randomize(quotes=quotes)
+            # Order images and text randomly
+            results = demo.randomize(quotes=quotes)
+            
+        else :
+            results = demo.randomize()
             
     app.logger.info('Handled Demo Request')
 
     return render_template('demo.html',
-                            num_images=len(images),
-                            num_texts=len(paragraphs),
+                            num_images=len(demo.images_base64),
+                            num_texts=len(demo.paragraphs),
                             results=results)
