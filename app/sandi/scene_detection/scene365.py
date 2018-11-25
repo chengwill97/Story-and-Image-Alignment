@@ -11,7 +11,11 @@ from PIL import Image
 from app import app
 
 class SceneDetection:
-
+    """Runs Scene Detection application
+    
+    Returns:
+        None
+    """
     DESIGN = os.environ['SCENE_DETECTION_DESIGN']
     WEIGHTS = os.environ['SCENE_DETECTION_WEIGHTS']
     LABELS = os.environ['SCENE_DETECTION_LABELS']
@@ -21,10 +25,25 @@ class SceneDetection:
     PROB = 'prob'
 
     def __init__(self, scene_resources):
+        """Initializes resources for scene detection
+        
+        Args:
+            scene_resources (tuple): (neural_network, transformer, labels)
+        """
         self.scene_resources = scene_resources
 
     def run(self, filenames, images_dir):
+        """Runs scene detection application
 
+        Runs scene detection application and gathers tags from results
+        
+        Args:
+            filenames (list): list of filenames
+            images_dir (str): path of directory where images are stored
+        
+        Returns:
+            dict: {filename: [tag1, tag2, ...]}
+        """
         app.logger.info('Starting scene detection analysis')
         
         net, transformer, labels = self.scene_resources
@@ -58,7 +77,14 @@ class SceneDetection:
         return scene_detection_tags
 
     def load_image(self, image_path):
-
+        """Load in image
+        
+        Args:
+            image_path (str): full path to image
+        
+        Returns:
+            np.array: image as array
+        """
         app.logger.info('Loading scene image {image}'.format(image=image_path))
 
         img = skimage.img_as_float(cv2.imread(image_path)).astype(np.float32)
@@ -71,7 +97,11 @@ class SceneDetection:
 
     @staticmethod
     def load_resources():
-
+        """Loads in resources for scene detection
+        
+        Returns:
+            tuple: (neural_network, transformer, labels)
+        """
         app.logger.debug('Loading scene detection nets and transformers')
 
         # initialize net

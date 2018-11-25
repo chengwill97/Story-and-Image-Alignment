@@ -5,7 +5,11 @@ from app import app
 from app.sandi.quotes.visual_semantic_embedding import (demo, tools, datasets)
 
 class Quotes:
-
+    """Runs the quote reccomendation application
+    
+    Returns:
+        None
+    """
     VSC_RESOURCES       = os.environ['VSC_RESOURCES']
     VSC_DEFAULT_MODEL   = os.environ['VSC_DEFAULT_MODEL']
     VSC_VGG             = os.environ['VSC_VGG']
@@ -18,9 +22,25 @@ class Quotes:
     CAPTIONS = 0
 
     def __init__(self, quotes_resources):
+        """Initializes resources for quote reccomendation
+        
+        Args:
+            quotes_resources (tuple): (model, neural_network, captions, vectors)
+        """
         self.quotes_resources = quotes_resources
 
     def run(self, filenames, images_dir):
+        """Runs Quote suggestion application
+
+        Runs Quote suggestino application and gathers quotes for each image
+        
+        Args:
+            filenames (list): list of filenames
+            images_dir (path]): full path to directory of image
+        
+        Returns:
+            [type]: [description]
+        """
         app.logger.info('Getting quote reccomendations')
 
         model, net, captions, vectors = self.quotes_resources
@@ -43,6 +63,11 @@ class Quotes:
 
     @staticmethod
     def load_resources():
+        """Loads in Quote suggestiion resources
+        
+        Returns:
+            tuple: (model, neural_network, captions, vectors)
+        """
         app.logger.debug('Loading quote reccomendation resources')
 
         net = demo.build_convnet(path_to_vgg=Quotes.VSC_VGG)

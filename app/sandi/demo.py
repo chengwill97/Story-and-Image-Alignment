@@ -15,7 +15,12 @@ from app.sandi.yolo.yolo                import Yolo
 from app.sandi.quotes.quote_rec         import Quotes
 
 class SandiWorkflow:
-
+    """Runs the YOLOV2, Scene Detection, 
+        and Quote Suggestion applications
+    
+    Returns:
+        None
+    """
     TEMP_DATA_PATH  = os.environ['TEMP_DATA_PATH']
     FILENAME_TAGS   = os.environ['FILENAME_TAGS']
     FILENAME_TEXT   = os.environ['FILENAME_TEXT']
@@ -24,6 +29,19 @@ class SandiWorkflow:
     IMAGES_FOLDER   = 'images'
 
     def __init__(self, yolo_resources=None, scene_resources=None, quote_resources=None):
+        """Initialization 
+        
+        Initializes the models and neural nets. 
+        Creates the transient data directories
+        that stores results and images.
+        
+        yolo_resources (model, optional): Defaults to None. 
+            YoloV2 model
+        scene_resources (tuple, optional): Defaults to None. 
+            (neural_net, transformer, labels)
+        quote_resources (tuple, optional): Defaults to None.
+            (model, neural_net, captions, vectors)
+        """
         self.images_base64      = dict()
         self.paragraphs         = list()
         self.folder             = None
@@ -41,7 +59,9 @@ class SandiWorkflow:
         self.create_data_folder()
 
     def run(self):
-
+        """Runs the Yolo and Scene detection applications
+        and saves the results to run image to text optimization
+        """
         app.logger.info('Running SANDI pipeline')
         
         # Obtain tags from the yolo and scene detection models
@@ -82,13 +102,21 @@ class SandiWorkflow:
         app.logger.info('Finished SANDI pipeline')
 
     def get_quotes(self):
-        
+        """Runs quote suggestion applicaiton
+
+        Returns:
+            dict: {filename: quote, ...}
+        """        
         quotes = self.quote.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         return quotes
 
     def collect_uploaded_images(self, uploaded_images):
+        """Save images from user to local filesystem
         
+        Args:
+            uploaded_images (list): list of flask image objects
+        """
         app.logger.debug('Savings images')
 
         for upload in uploaded_images:
@@ -106,7 +134,11 @@ class SandiWorkflow:
         app.logger.debug('Collected {num_images} images'.format(num_images=len(uploaded_images)))    
 
     def collect_uploaded_texts(self, uploaded_texts):
-
+        """Save texts from user to local filesystem
+        
+        Args:
+            uploaded_texts (list): list of flask text files
+        """
         app.logger.debug('Saving paragraphs')
 
         self.paragraphs = list()
@@ -121,7 +153,8 @@ class SandiWorkflow:
         app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(self.paragraphs)))        
 
     def create_data_folder(self):
-
+        """Create transient folder to store images, text, and results
+        """
         app.logger.debug('Creating data directory')
 
         self.folder = None
@@ -139,7 +172,8 @@ class SandiWorkflow:
         app.logger.debug('Data directory created at {dir}'.format(dir=self.folder))
 
     def clean_up(self):
-
+        """Remove transient folder
+        """
         app.logger.debug('Erasing data directory')
         
         try:
@@ -148,7 +182,12 @@ class SandiWorkflow:
             pass
 
     def randomize(self, quotes=None):
+        """Randomly assigns at most one image to one paragraph 
+            quotes (dict, optional): Defaults to None. {filename: quote, ...}
 
+        Returns:
+            list: elements are either text or images with quotes if given
+        """
         app.logger.info('Randomizing images and text')
 
         randomized = list()
@@ -178,12 +217,27 @@ class SandiWorkflow:
 
     @staticmethod
     def load_yolo_resources():
+        """Loads in YoloV2 model
+        
+        Returns:
+            model: YoloV2 model
+        """
         return Yolo.load_resources()
 
     @staticmethod
     def load_scene_resources():
+        """Loads in resourecs needed for scene detection
+        
+        Returns:
+            tuple: (neural_network, transformer, labels)
+        """
         return SceneDetection.load_resources()
 
     @staticmethod
     def load_quote_resources():
+        """Loads in resources needed for quote suggestions
+        
+        Returns:
+            tuple: (model, neural_network, captions, vectors)
+        """
         return Quotes.load_resources()

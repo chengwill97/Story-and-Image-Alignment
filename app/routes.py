@@ -16,6 +16,12 @@ from app.sandi.demo import SandiWorkflow
 
 @app.before_first_request
 def initServer():
+    """Initialize the models and neural nets used for
+        Yolo, 
+        Scene detection, 
+        and Quote Suggestions
+        only before the first request
+    """
     app.logger.info('Setting up server')
 
     app.logger.debug('Setting up data directory')
@@ -38,11 +44,20 @@ def initServer():
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    """Home page of sandi web app
+    
+    Returns:
+        templat: template of home page
+    """
     return render_template('homepage.html')
 
 @app.route('/demo', methods=['GET', 'POST'])
 def demo():
-
+    """Page with results of sandi demo
+    
+    Returns:
+        template: template of demo with results
+    """
     app.logger.info('Handling Demo Request')
 
     # Initialize workflow for SANDI demo
