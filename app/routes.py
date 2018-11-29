@@ -39,7 +39,7 @@ def initServer():
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
     quote_resources = SandiWorkflow.load_quote_resources()
- 
+
     app.logger.info('Server set up')
 
 @app.route('/', methods=['GET', 'POST'])
