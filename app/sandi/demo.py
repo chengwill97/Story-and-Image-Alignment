@@ -3,6 +3,7 @@ import io
 import shutil
 import random
 import base64
+import requests
 
 import lightnet
 
@@ -21,12 +22,12 @@ class SandiWorkflow:
     Returns:
         None
     """
-    TEMP_DATA_PATH  = os.environ['TEMP_DATA_PATH']
-    FILENAME_TAGS   = os.environ['FILENAME_TAGS']
-    FILENAME_TEXT   = os.environ['FILENAME_TEXT']
-    TAGS_DELIM      = os.environ['TAGS_DELIM']
-
-    IMAGES_FOLDER   = 'images'
+    SANDI_ALIGNMENT_URI  = os.environ['SANDI_ALIGNMENT_URI']
+    TEMP_DATA_PATH       = os.environ['TEMP_DATA_PATH']
+    FILENAME_TAGS        = os.environ['FILENAME_TAGS']
+    FILENAME_TEXT        = os.environ['FILENAME_TEXT']
+    TAGS_DELIM           = os.environ['TAGS_DELIM']
+    IMAGES_FOLDER        = 'images'
 
     def __init__(self, yolo_resources=None, scene_resources=None, quote_resources=None):
         """Initialization 
@@ -45,6 +46,7 @@ class SandiWorkflow:
         self.images_base64      = dict()
         self.paragraphs         = list()
         self.folder             = None
+        self.aligned            = None
         self.yolo_resources     = yolo_resources
         self.scene_resources    = scene_resources
         self.quote_resources    = quote_resources
@@ -58,7 +60,17 @@ class SandiWorkflow:
 
         self.create_data_folder()
 
+    def get_alignment(self):
+        pass
+
     def run(self):
+        """Get tags from images and runs the sandi 
+        image alignment server application
+        """
+        self.run_tags()
+        self.run_alignment()
+
+    def run_tags(self):
         """Runs the Yolo and Scene detection applications
         and saves the results to run image to text optimization
         """
@@ -100,6 +112,20 @@ class SandiWorkflow:
             app.logger.exception(e)
 
         app.logger.info('Finished SANDI pipeline')
+
+    def run_alignment(self):
+        """Runs sandi image and text alignment
+        application
+        """
+        
+        params = {'work_dir': self.folder, 'num_images': len(self.images_base64)}
+
+        try:
+            response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
+            data         = response.json()
+            self.aligned = data['aligned']
+        except Exception as e:
+            app.logger.exception(e)
 
     def get_quotes(self):
         """Runs quote suggestion applicaiton
@@ -148,7 +174,7 @@ class SandiWorkflow:
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'w') as f:
             for index, paragraph in enumerate(self.paragraphs):
-                f.write('{index}\t{paragraph}\n'.format(index=index, paragraph=paragraph.encode('utf8')))
+                f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
 
         app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(self.paragraphs)))        
 
