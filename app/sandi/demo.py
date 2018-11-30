@@ -61,7 +61,29 @@ class SandiWorkflow:
         self.create_data_folder()
 
     def get_alignment(self):
-        pass
+        """Get alignment from '{folder}/alignment.txt'
+        
+        Raises:
+            Exception: '{folder}/alignment.txt' does not exist
+        
+        Returns:
+            dict: maps paragraph number to image name
+                e.g. {para_id, filename, ...}
+        """
+        """Get alignment from '{folder}/alignment.txt'
+        """
+    
+        alignment = dict()
+
+        if not self.aligned or not os.path.isfile(self.aligned):
+            raise Exception('file "{path}" does not exist'.format(path=os.path.join(self.folder, 'alignment.txt')))
+        
+        """
+        TODO: read from alignments from alignment.txt
+        """
+
+        return alignment
+
 
     def run(self):
         """Get tags from images and runs the sandi 
