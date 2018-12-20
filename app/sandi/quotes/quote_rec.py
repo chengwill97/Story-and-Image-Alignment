@@ -9,7 +9,7 @@ from app.sandi.quotes.visual_semantic_embedding import (demo, tools, datasets)
 
 class Quotes:
     """Runs the quote reccomendation application
-    
+
     Returns:
         None
     """
@@ -26,7 +26,7 @@ class Quotes:
 
     def __init__(self, quotes_resources):
         """Initializes resources for quote reccomendation
-        
+
         Args:
             quotes_resources (tuple): (model, neural_network, captions, vectors)
         """
@@ -37,11 +37,11 @@ class Quotes:
         """Runs Quote suggestion application
 
         Runs Quote suggestino application and gathers quotes for each image
-        
+
         Args:
             filenames (list): list of filenames
             images_dir (path]): full path to directory of image
-        
+
         Returns:
             dict: {filename: quote, ...}
         """
@@ -54,8 +54,8 @@ class Quotes:
 
         for filename in filenames:
             image = os.path.join(images_dir, filename)
-            quotes = demo.retrieve_captions(model, net, captions, vectors, image, k=1)
-
+            quotes = demo.retrieve_captions(model, net, captions, vectors, image, k=5)
+            quote_recs[filename] = ''
             try:
                 """Find best quote that
                 has not been used already
@@ -65,7 +65,7 @@ class Quotes:
                         quote_recs[filename] = self.detokenize(quote)
                         quote_used[quote] = True
                         break
-                app.logger.debug('Quote {filename}: {results}'.format(filename=filename, results=quote_recs[filename]))
+                app.logger.debug('Quote {filename}: {results}'.format(filename=filename, results=quote_recs.get(filename, 'no results found')))
             except IndexError:
                 pass
 
@@ -75,10 +75,10 @@ class Quotes:
 
     def detokenize(self, tokens_str):
         """Detokenizes tokens
-        
+
         Args:
             tokens_str (str): string of tokens
-        
+
         Returns:
             str: untokenized string
         """
@@ -92,7 +92,7 @@ class Quotes:
     @staticmethod
     def load_resources():
         """Loads in Quote suggestiion resources
-        
+
         Returns:
             tuple: (model, neural_network, captions, vectors)
         """
