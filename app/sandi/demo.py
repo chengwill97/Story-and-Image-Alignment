@@ -165,7 +165,7 @@ class SandiWorkflow:
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)) as f:
             for line in f:
                 align = line.split('\n')[0].split('\t')
-                self.alignments[int(align[0])] = align[1]
+                self.alignments[int(align[0])-1] = align[1]
 
         image_names = list(self.images_base64.keys())
         results = list()
@@ -174,6 +174,7 @@ class SandiWorkflow:
             results.append(self.paragraphs[i])
 
             if i in self.alignments:
+
                 file_name   = self.alignments[i]
                 image_bytes = self.images_base64[file_name]['data']
                 image64     = base64.b64encode(image_bytes).decode('ascii')
@@ -185,7 +186,11 @@ class SandiWorkflow:
                 if quotes:
                     results[-1]['quote'] = quotes[file_name]
 
-                    app.logger.debug('Appending quote {quote} to {file_name}'.format(quote=quotes[file_name],file_name=file_name))
+                    app.logger.debug('Appending quote {quote} \
+                                    with {file_name} to \
+                                    paragraphs {i}'.format(quote=quotes[file_name],
+                                                            file_name=file_name,
+                                                            i=i))
 
         return results
 
