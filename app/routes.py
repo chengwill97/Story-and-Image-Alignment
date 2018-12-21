@@ -4,11 +4,16 @@ import shutil
 import base64
 import random
 import cv2
+import base64
 import numpy as np
 
 import lightnet
 
-from flask import (render_template, flash, redirect, url_for, request)
+from flask import render_template
+from flask import flash
+from flask import redirect
+from flask import url_for
+from flask import request
 
 from app import app
 
@@ -17,8 +22,8 @@ from app.sandi.demo import SandiWorkflow
 @app.before_first_request
 def initServer():
     """Initialize the models and neural nets used for
-        Yolo, 
-        Scene detection, 
+        Yolo,
+        Scene detection,
         and Quote Suggestions
         only before the first request
     """
@@ -37,7 +42,7 @@ def initServer():
 
     global yolo_resources, scene_resources, quote_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
-    scene_resources = SandiWorkflow.load_scene_resources()
+    scene_resources = None #SandiWorkflow.load_scene_resources()
     quote_resources = SandiWorkflow.load_quote_resources()
 
     app.logger.info('Server set up')
@@ -45,7 +50,7 @@ def initServer():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     """Home page of sandi web app
-    
+
     Returns:
         templat: template of home page
     """
@@ -54,20 +59,22 @@ def index():
 @app.route('/demo', methods=['GET', 'POST'])
 def demo():
     """Page with results of sandi demo
-    
+
     Returns:
         template: template of demo with results
     """
     app.logger.info('Handling Demo Request')
 
-    # Initialize workflow for SANDI demo
+    results = list()
+    quotes  = None
 
-    demo = SandiWorkflow(yolo_resources=yolo_resources, 
+    # Initialize workflow for SANDI demo
+    demo = SandiWorkflow(yolo_resources=yolo_resources,
                             scene_resources=scene_resources,
                             quote_resources=quote_resources)
 
     if request.method == 'POST':
-        
+
         # Gather and save images and text files
         demo.collect_uploaded_images(request.files.getlist('images'))
         demo.collect_uploaded_texts(request.files.getlist('texts'))
@@ -79,12 +86,11 @@ def demo():
             # Get reccomended quotes
             quotes = demo.get_quotes()
 
-            # Order images and text randomly
-            results = demo.randomize(quotes=quotes)
-            
-        else :
-            results = demo.randomize()
-            
+        try:
+            results = demo.get_alignment(quotes=quotes)
+        except Exception as e:
+            app.logger.warn(e)
+
     app.logger.info('Handled Demo Request')
 
     return render_template('demo.html',
