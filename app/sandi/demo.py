@@ -14,6 +14,7 @@ from app import app
 # from app.sandi.scene_detection.scene365 import SceneDetection
 from app.sandi.yolo.yolo                import Yolo
 from app.sandi.quotes.quote_rec         import Quotes
+from app.sandi.glove.glove              import GloveVectors
 
 class SandiWorkflow:
     """Runs the YOLOV2, Scene Detection,
@@ -30,7 +31,8 @@ class SandiWorkflow:
     TAGS_DELIM           = os.environ['TAGS_DELIM']
     IMAGES_FOLDER        = 'images'
 
-    def __init__(self, yolo_resources=None, scene_resources=None, quote_resources=None):
+    def __init__(self, yolo_resources=None, scene_resources=None,
+                 quote_resources=None, glove_resources=None):
         """Initialization
 
         Initializes the models and neural nets.
@@ -51,9 +53,11 @@ class SandiWorkflow:
         self.yolo_resources     = yolo_resources
         self.scene_resources    = scene_resources
         self.quote_resources    = quote_resources
+        self.glove_resources    = glove_resources
         self.yolo               = Yolo          (self.yolo_resources)
         # self.scene              = SceneDetection(self.scene_resources)
         self.quote              = Quotes        (self.quote_resources)
+        self.glove              = GloveVectors  (self.glove_resources)
 
         app.logger.info('Initiating SANDI pipeline')
 
@@ -130,9 +134,8 @@ class SandiWorkflow:
                         export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"; \
                         export GRB_LICENSE_FILE="${GUROBI_HOME}/gurobi.lic"; '
 
-        command = '{pre_commands} {command} {flags} {jar} \
+        command = '{command} {flags} {jar} \
                     {data_folder} {num_images} {model_folder}'.format(
-                        pre_commands='',
                         command='java',
                         flags='-jar',
                         jar='/home/willc97/dev/python2.7/SANDI/SANDI_main.jar',
@@ -143,37 +146,43 @@ class SandiWorkflow:
         os.system(command)
 
     def get_alignment(self, quotes=None):
-        """Get alignment from '{folder}/alignments.txt'
+        """Get alignment from 'path/to/alignments.txt'
+            quotes ([dict], optional): Defaults to None. match of quote to image
 
         Raises:
-            Exception: '{folder}/alignments.txt' does not exist
+            Exception: 'path/to/alignments.txt' does not exist
 
         Returns:
             dict: maps paragraph number to image name
                 e.g. {para_id, filename, ...}
         """
-        """Get alignment from '{folder}/alignments.txt'
-        """
-
         if not os.path.exists(os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)):
-            raise Exception('file "{path}" does not exist'.format(path=os.path.join(self.folder, 'alignment.txt')))
+            raise Exception('file "{path}" does not exist' \
+                .format(path=os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)))
 
-        """
-        TODO: read from alignments from alignment.txt
-        """
-
+        # Read alignments from alignments.txt
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)) as f:
             for line in f:
                 align = line.split('\n')[0].split('\t')
                 self.alignments[int(align[0])-1] = align[1]
 
         image_names = list(self.images_base64.keys())
-        results = list()
+        results     = list()
+        quote_used  = dict()
+
+        """
+        We append paragraphs and any images
+        that are aligned that paragraph
+        """
 
         for i in range(len(self.paragraphs)):
             results.append(self.paragraphs[i])
 
+            app.logger.debug('Appending paragraph {}'.format(i))
+
             if i in self.alignments:
+
+                app.logger.debug('Appending quote to paragraph {}'.format(i))
 
                 file_name   = self.alignments[i]
                 image_bytes = self.images_base64[file_name]['data']
@@ -183,11 +192,27 @@ class SandiWorkflow:
                                 'data': image64,
                                 'type': self.images_base64[file_name]['type']})
 
+                # Find best quote with best cosine similarity to paragraph
                 if quotes:
-                    results[-1]['quote'] = quotes[file_name]
 
-                    app.logger.debug('Appending quote {quote} \
-                                    with {file_name} to \
+                    vector_paragraph = self.glove.sentence_to_vec(self.paragraphs[i])
+                    vector_quote = None
+
+                    best_score = 0.0
+
+                    for top_quote in quotes[file_name]:
+                        # do not include duplicates
+                        if top_quote in quote_used:
+                            continue
+
+                        vector_quote = self.glove.sentence_to_vec(top_quote)
+                        score = self.glove.cosine(vector_paragraph, vector_quote)
+
+                        # update quote with closest match
+                        if score > best_score:
+                            results[-1]['quote'] = top_quote
+
+                    app.logger.debug('Appending quote {quote} with {file_name} to \
                                     paragraphs {i}'.format(quote=quotes[file_name],
                                                             file_name=file_name,
                                                             i=i))
@@ -198,7 +223,7 @@ class SandiWorkflow:
         """Runs quote suggestion applicaiton
 
         Returns:
-            dict: {filename: quote, ...}
+            dict: {filename: [quote1, quote2, ...], ...}
         """
         quotes = self.quote.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
@@ -283,8 +308,9 @@ class SandiWorkflow:
         """
         app.logger.info('Randomizing images and text')
 
-        randomized = list()
+        randomized  = list()
         image_names = list(self.images_base64.keys())
+        quote_used  = dict()
 
         # sample random numbers
         randomized_ind = random.sample(range(0, len(self.paragraphs)-1), len(self.images_base64))
@@ -299,10 +325,34 @@ class SandiWorkflow:
 
                 randomized.append({'file_name': file_name,'data': image64, 'type': self.images_base64[file_name]['type']})
 
+                # Find best quote with best cosine similarity to paragraph
                 if quotes:
-                    randomized[-1]['quote'] = quotes[file_name]
+                    vector_paragraph = self.glove.sentence_to_vec(self.paragraphs[i])
+                    vector_quote = None
 
-                    app.logger.debug('Appending quote {quote} to {file_name}'.format(quote=quotes[file_name],file_name=file_name))
+                    best_score = 0.0
+
+                    for top_quote in quotes[filename]:
+                        # do not include duplicates
+                        if top_quote in quote_used:
+                            continue
+
+                        vector_quote = self.glove.sentence_to_vec(top_quote)
+                        score = self.glove.cosine(vector_paragraph, vector_quote)
+
+                        # update quote with closest match
+                        if score > best_score:
+                            results[-1]['quote'] = top_quote
+
+                    app.logger.debug('Appending quote {quote} with {file_name} to \
+                                    paragraphs {i}'.format(quote=quotes[file_name],
+                                                            file_name=file_name,
+                                                            i=i))
+
+                # if quotes:
+                #     randomized[-1]['quote'] = quotes[file_name]
+
+                #     app.logger.debug('Appending quote {quote} to {file_name}'.format(quote=quotes[file_name],file_name=file_name))
 
                 cur_ind += 1
 
@@ -335,3 +385,12 @@ class SandiWorkflow:
             tuple: (model, neural_network, captions, vectors)
         """
         return Quotes.load_resources()
+
+    @staticmethod
+    def load_glove_resources():
+        """Loads in resources needed for glove vector cosine similarity
+
+        Returns:
+            pandas.DataFrame: dataframe of vectors
+        """
+        return GloveVectors.load_resources()
