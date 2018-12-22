@@ -6,6 +6,8 @@ import random
 import cv2
 import base64
 import numpy as np
+import pandas as pd
+import traceback
 
 import lightnet
 
@@ -40,10 +42,11 @@ def initServer():
 
     app.logger.debug('Setting up models and nets ')
 
-    global yolo_resources, scene_resources, quote_resources
+    global yolo_resources, scene_resources, quote_resources, glove_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
-    scene_resources = None #SandiWorkflow.load_scene_resources()
+    scene_resources = SandiWorkflow.load_scene_resources()
     quote_resources = SandiWorkflow.load_quote_resources()
+    glove_resources = SandiWorkflow.load_glove_resources()
 
     app.logger.info('Server set up')
 
@@ -70,8 +73,9 @@ def demo():
 
     # Initialize workflow for SANDI demo
     demo = SandiWorkflow(yolo_resources=yolo_resources,
-                            scene_resources=scene_resources,
-                            quote_resources=quote_resources)
+                         scene_resources=scene_resources,
+                         quote_resources=quote_resources,
+                         glove_resources=glove_resources)
 
     if request.method == 'POST':
 
@@ -90,6 +94,7 @@ def demo():
             results = demo.get_alignment(quotes=quotes)
         except Exception as e:
             app.logger.warn(e)
+            traceback.print_exc()
 
     app.logger.info('Handled Demo Request')
 

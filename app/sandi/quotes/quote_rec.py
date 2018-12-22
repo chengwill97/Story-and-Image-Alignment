@@ -43,7 +43,7 @@ class Quotes:
             images_dir (path]): full path to directory of image
 
         Returns:
-            dict: {filename: quote, ...}
+            dict: {filename: [quote1, quote2, ...], ...}
         """
         app.logger.info('Getting quote reccomendations')
 
@@ -54,20 +54,10 @@ class Quotes:
 
         for filename in filenames:
             image = os.path.join(images_dir, filename)
-            quotes = demo.retrieve_captions(model, net, captions, vectors, image, k=5)
-            quote_recs[filename] = ''
-            try:
-                """Find best quote that
-                has not been used already
-                """
-                for quote in quotes:
-                    if quote not in quote_used:
-                        quote_recs[filename] = self.detokenize(quote)
-                        quote_used[quote] = True
-                        break
-                app.logger.debug('Quote {filename}: {results}'.format(filename=filename, results=quote_recs.get(filename, 'no results found')))
-            except IndexError:
-                pass
+            quotes = demo.retrieve_captions(model, net, captions,
+                                            vectors, image, k=10)
+
+            quote_recs[filename] = [self.detokenize(quote) for quote in quotes]
 
         app.logger.info('Retrieved quote reccomendations')
 
