@@ -80,7 +80,7 @@ class SandiWorkflow:
 
         # Obtain tags from the yolo and scene detection models
 
-        yolo_tags = self.yolo.run(self.images_base64)
+        yolo_tags = self.yolo.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         # scene_detection_tags = self.scene.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
