@@ -51,9 +51,9 @@ class Yolo:
 
                 [tags.add(box[1]) for box in boxes]
 
-            yolo_tags[filename] = tags
+            yolo_tags[file_name] = tags
 
-            app.logger.debug('Yolo tags {filename}: {results}'.format(filename=filename, results=yolo_tags[filename]))
+            app.logger.debug('Yolo tags {file_name}: {results}'.format(file_name=file_name, results=tags))
 
         app.logger.info('Finished yolo analysis')
 

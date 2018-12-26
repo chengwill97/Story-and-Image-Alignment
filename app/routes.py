@@ -31,21 +31,22 @@ def initServer():
     """
     app.logger.info('Setting up server')
 
-    app.logger.debug('Setting up data directory')
-
     temp_data_path = os.path.abspath(os.environ['TEMP_DATA_PATH'])
+
+    app.logger.debug('Setting up data directory {}'.format(temp_data_path))
+
     try:
         os.mkdir(temp_data_path)
     except OSError:
         if not os.path.isdir(temp_data_path):
             app.logger.warn('Error creating directory {}'.format(temp_data_path))
 
-    app.logger.debug('Setting up models and nets ')
+    app.logger.debug('Setting up models and nets')
 
     global yolo_resources, scene_resources, quote_resources, glove_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
-    quote_resources = SandiWorkflow.load_quote_resources()
+    quote_resources = None #SandiWorkflow.load_quote_resources()
     glove_resources = SandiWorkflow.load_glove_resources()
 
     app.logger.info('Server set up')
@@ -93,6 +94,7 @@ def demo():
         try:
             results = demo.get_alignment(quotes=quotes)
         except Exception as e:
+            results = demo.get_random(quotes=quotes)
             app.logger.warn(e)
             traceback.print_exc()
 

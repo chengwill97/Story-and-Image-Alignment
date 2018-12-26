@@ -5,6 +5,7 @@ import random
 import base64
 import requests
 
+import magic
 import lightnet
 
 from flask import request
@@ -46,18 +47,20 @@ class SandiWorkflow:
         quote_resources (tuple, optional): Defaults to None.
             (model, neural_net, captions, vectors)
         """
+        self.folder             = None
         self.images_base64      = dict()
+        self.image_names        = list()
         self.paragraphs         = list()
         self.alignments         = dict()
-        self.folder             = None
         self.yolo_resources     = yolo_resources
         self.scene_resources    = scene_resources
         self.quote_resources    = quote_resources
         self.glove_resources    = glove_resources
-        self.yolo               = Yolo          (self.yolo_resources)
+        self.yolo               = Yolo(self.yolo_resources)
         # self.scene              = SceneDetection(self.scene_resources)
-        self.quote              = Quotes        (self.quote_resources)
-        self.glove              = GloveVectors  (self.glove_resources)
+        self.quote              = Quotes(self.quote_resources)
+        self.glove              = GloveVectors(self.glove_resources)
+        self.mime               = magic.Magic(mime=True)
 
         app.logger.info('Initiating SANDI pipeline')
 
@@ -80,9 +83,9 @@ class SandiWorkflow:
 
         # Obtain tags from the yolo and scene detection models
 
-        yolo_tags = self.yolo.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        yolo_tags = self.yolo.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        # scene_detection_tags = self.scene.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        # scene_detection_tags = self.scene.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         # Combine then save tags to folder
 
@@ -93,7 +96,7 @@ class SandiWorkflow:
 
             with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
 
-                for filename in self.images_base64.keys():
+                for filename in self.image_names:
 
                     union_tags = set()
 
@@ -120,7 +123,7 @@ class SandiWorkflow:
         application
         """
 
-        # params = {'work_dir': self.folder, 'num_images': len(self.images_base64)}
+        # params = {'work_dir': self.folder, 'num_images': len(self.image_names)}
 
         # try:
         #     response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
@@ -140,7 +143,7 @@ class SandiWorkflow:
                         flags='-jar',
                         jar='/home/willc97/dev/python2.7/SANDI/SANDI_main.jar',
                         data_folder=os.path.abspath(self.folder),
-                        num_images=min(len(self.images_base64), len(self.paragraphs)),
+                        num_images=min(len(self.image_names), len(self.paragraphs)),
                         model_folder='/home/willc97/dev/python2.7/SANDI/')
         app.logger.debug('Executing: \n {command}'.format(command=command))
         os.system(command)
@@ -166,7 +169,6 @@ class SandiWorkflow:
                 align = line.split('\n')[0].split('\t')
                 self.alignments[int(align[0])-1] = align[1]
 
-        image_names = list(self.images_base64.keys())
         results     = list()
         quote_used  = dict()
 
@@ -174,9 +176,8 @@ class SandiWorkflow:
         We append paragraphs and any images
         that are aligned that paragraph
         """
-
-        for i in range(len(self.paragraphs)):
-            results.append(self.paragraphs[i])
+        for i, paragraph in enumerate(self.paragraphs):
+            results.append(paragraph)
 
             app.logger.debug('Appending paragraph {}'.format(i))
 
@@ -185,37 +186,93 @@ class SandiWorkflow:
                 app.logger.debug('Appending quote to paragraph {}'.format(i))
 
                 file_name   = self.alignments[i]
-                image_bytes = self.images_base64[file_name]['data']
-                image64     = base64.b64encode(image_bytes).decode('ascii')
+                file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
 
-                results.append({'file_name': file_name,
-                                'data': image64,
-                                'type': self.images_base64[file_name]['type']})
+                """Read in image as base64 string
+                and append to results
+                """
+                with open(file_path) as image:
 
-                # Find best quote with best cosine similarity to paragraph
-                if quotes:
+                    result = {'file_name'   : file_name,
+                              'data'        : base64.b64encode(image.read()).decode('ascii'),
+                              'type'        : self.mime.from_file(file_path),
+                              'quote'       : None
+                             }
 
-                    vector_paragraph = self.glove.sentence_to_vec(self.paragraphs[i])
-                    vector_quote = None
+                    results.append(result)
 
-                    best_score = 0.0
+                    """ Find best quote with best
+                    cosine similarity to paragraph
+                    """
+                    if quotes:
 
-                    for top_quote in quotes[file_name]:
-                        # do not include duplicates
-                        if top_quote in quote_used:
-                            continue
+                        result['quote'] = self.get_best_quote(paragraph, quotes[filename], quote_used)
 
-                        vector_quote = self.glove.sentence_to_vec(top_quote)
-                        score = self.glove.cosine(vector_paragraph, vector_quote)
+                        app.logger.debug('Appending quote {quote} with {file_name} to \
+                                        paragraph {i}'.format(quote=result['quote'],
+                                                              file_name=result['file_name'],
+                                                              i=i))
 
-                        # update quote with closest match
-                        if score > best_score:
-                            results[-1]['quote'] = top_quote
+        return results
 
-                    app.logger.debug('Appending quote {quote} with {file_name} to \
-                                    paragraphs {i}'.format(quote=quotes[file_name],
-                                                            file_name=file_name,
-                                                            i=i))
+    def get_random(self, quotes=None):
+        """Randomly assigns at most one image to one paragraph
+            quotes (dict, optional): Defaults to None. {filename: quote, ...}
+
+        Returns:
+            list: elements are either text or images with quotes if given
+        """
+        app.logger.info('Randomizing images and text')
+
+        results     = list()
+        image_names = self.image_names
+        quote_used  = dict()
+
+        # sample random numbers
+        random_samples = random.sample(range(0, len(self.paragraphs)-1), len(self.image_names))
+
+        """
+        We append paragraphs and any images
+        that are aligned that paragraph
+        """
+        cur_ind = 0
+        for i, paragraph in enumerate(self.paragraphs):
+            results.append(paragraph)
+
+            app.logger.debug('Appending paragraph {}'.format(i))
+
+            if i in random_samples:
+
+                app.logger.debug('Appending quote to paragraph {}'.format(i))
+
+                file_name   = image_names[cur_ind]
+                file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
+
+                """Read in image as base64 string
+                and append to results
+                """
+                with open(file_path) as image:
+
+                    result = {'file_name'   : file_name,
+                              'data'        : base64.b64encode(image.read()).decode('ascii'),
+                              'type'        : self.mime.from_file(file_path),
+                              'quote'       : None
+                            }
+
+                    results.append(result)
+
+                    """ Find best quote with best
+                    cosine similarity to paragraph
+                    """
+                    if quotes:
+
+                        result['quote'] = self.get_best_quote(paragraph, quotes[filename], quote_used)
+
+                        app.logger.debug('Appending quote {quote} with {file_name} to \
+                                          paragraphs {i}'.format(quote=best_quote,
+                                                                 file_name=file_name,
+                                                                 i=i))
+                cur_ind += 1
 
         return results
 
@@ -225,9 +282,39 @@ class SandiWorkflow:
         Returns:
             dict: {filename: [quote1, quote2, ...], ...}
         """
-        quotes = self.quote.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        quotes = self.quote.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         return quotes
+
+    def get_best_quote(self, paragraph, quotes, quote_used):
+        """Finds best matching quote to paragraph
+        based off of cosine similarity scores
+
+        Args:
+            paragraph (str): paragraph to match
+            quotes (list: list of quotes to parase through
+            quote_used (dict): quotes that have already been used
+        """
+
+        top_score        = 0.0
+        top_quote        = None
+        vector_quote     = None
+        vector_paragraph = self.glove.sentence_to_vec(paragraph)
+
+        for quote in quotes:
+
+            # do not include duplicates
+            if quote in quote_used:
+                continue
+
+            vector_quote    = self.glove.sentence_to_vec(quote)
+            score           = self.glove.cosine(vector_paragraph, vector_quote)
+
+            # update quote with closest match
+            if score > top_score:
+                top_quote = quote
+
+        return top_quote
 
     def collect_uploaded_images(self, uploaded_images):
         """Save images from user to local filesystem
@@ -241,13 +328,7 @@ class SandiWorkflow:
 
             upload.save(os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, upload.filename))
 
-            upload.seek(0)
-
-            upload_bytes = io.BytesIO(upload.read()).read()
-
-            image_data = {'data': upload_bytes, 'type': upload.content_type}
-
-            self.images_base64[upload.filename] = image_data
+            self.image_names.append(upload.filename)
 
         app.logger.debug('Collected {num_images} images'.format(num_images=len(uploaded_images)))
 
@@ -298,65 +379,6 @@ class SandiWorkflow:
             shutil.rmtree(self.folder)
         except Exception:
             pass
-
-    def randomize(self, quotes=None):
-        """Randomly assigns at most one image to one paragraph
-            quotes (dict, optional): Defaults to None. {filename: quote, ...}
-
-        Returns:
-            list: elements are either text or images with quotes if given
-        """
-        app.logger.info('Randomizing images and text')
-
-        randomized  = list()
-        image_names = list(self.images_base64.keys())
-        quote_used  = dict()
-
-        # sample random numbers
-        randomized_ind = random.sample(range(0, len(self.paragraphs)-1), len(self.images_base64))
-
-        cur_ind = 0
-        for i in range(len(self.paragraphs)):
-            randomized.append(self.paragraphs[i])
-            if i in randomized_ind:
-                file_name = image_names[cur_ind]
-                image_bytes = self.images_base64[file_name]['data']
-                image64 = base64.b64encode(image_bytes).decode('ascii')
-
-                randomized.append({'file_name': file_name,'data': image64, 'type': self.images_base64[file_name]['type']})
-
-                # Find best quote with best cosine similarity to paragraph
-                if quotes:
-                    vector_paragraph = self.glove.sentence_to_vec(self.paragraphs[i])
-                    vector_quote = None
-
-                    best_score = 0.0
-
-                    for top_quote in quotes[filename]:
-                        # do not include duplicates
-                        if top_quote in quote_used:
-                            continue
-
-                        vector_quote = self.glove.sentence_to_vec(top_quote)
-                        score = self.glove.cosine(vector_paragraph, vector_quote)
-
-                        # update quote with closest match
-                        if score > best_score:
-                            results[-1]['quote'] = top_quote
-
-                    app.logger.debug('Appending quote {quote} with {file_name} to \
-                                    paragraphs {i}'.format(quote=quotes[file_name],
-                                                            file_name=file_name,
-                                                            i=i))
-
-                # if quotes:
-                #     randomized[-1]['quote'] = quotes[file_name]
-
-                #     app.logger.debug('Appending quote {quote} to {file_name}'.format(quote=quotes[file_name],file_name=file_name))
-
-                cur_ind += 1
-
-        return randomized
 
     @staticmethod
     def load_yolo_resources():
