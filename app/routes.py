@@ -47,7 +47,7 @@ def initServer():
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
     quote_resources = None #SandiWorkflow.load_quote_resources()
-    glove_resources = SandiWorkflow.load_glove_resources()
+    glove_resources = None #SandiWorkflow.load_glove_resources()
 
     app.logger.info('Server set up')
 
@@ -69,8 +69,10 @@ def demo():
     """
     app.logger.info('Handling Demo Request')
 
-    results = list()
-    quotes  = None
+    results    = list()
+    quotes     = None
+    num_images = 0
+    num_texts  = 0
 
     # Initialize workflow for SANDI demo
     demo = SandiWorkflow(yolo_resources=yolo_resources,
@@ -81,8 +83,8 @@ def demo():
     if request.method == 'POST':
 
         # Gather and save images and text files
-        demo.collect_uploaded_images(request.files.getlist('images'))
-        demo.collect_uploaded_texts(request.files.getlist('texts'))
+        num_images = demo.collect_uploaded_images(request.files.getlist('images'))
+        num_texts  = demo.collect_uploaded_texts(request.files.getlist('texts'))
 
         # Get tags from yolo and caffe
         demo.run()
@@ -91,16 +93,20 @@ def demo():
             # Get reccomended quotes
             quotes = demo.get_quotes()
 
+        """Get optimized images and texts, and
+        if alignment somehow fails, we give
+        a randomized order of images and texts
+        """
         try:
-            results = demo.get_alignment(quotes=quotes)
+            results = demo.get_optimized_alignments(quotes=quotes)
         except Exception as e:
-            results = demo.get_random(quotes=quotes)
             app.logger.warn(e)
             traceback.print_exc()
+            results = demo.get_randomized_alignments(quotes=quotes)
 
     app.logger.info('Handled Demo Request')
 
     return render_template('demo.html',
-                            num_images=len(demo.images_base64),
-                            num_texts=len(demo.paragraphs),
+                            num_images=num_images,
+                            num_texts=num_texts,
                             results=results)

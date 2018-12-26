@@ -48,7 +48,6 @@ class SandiWorkflow:
             (model, neural_net, captions, vectors)
         """
         self.folder             = None
-        self.images_base64      = dict()
         self.image_names        = list()
         self.paragraphs         = list()
         self.alignments         = dict()
@@ -148,7 +147,7 @@ class SandiWorkflow:
         app.logger.debug('Executing: \n {command}'.format(command=command))
         os.system(command)
 
-    def get_alignment(self, quotes=None):
+    def get_optimized_alignments(self, quotes=None):
         """Get alignment from 'path/to/alignments.txt'
             quotes ([dict], optional): Defaults to None. match of quote to image
 
@@ -159,93 +158,86 @@ class SandiWorkflow:
             dict: maps paragraph number to image name
                 e.g. {para_id, filename, ...}
         """
-        if not os.path.exists(os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)):
+
+        app.logger.info('Getting optimized alignments')
+
+        results        = list()
+        quote_used     = dict()
+        alignments     = dict()
+        alignment_path = os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)
+
+        # Check that alignment file exists
+        if not os.path.exists(alignment_path):
             raise Exception('file "{path}" does not exist' \
-                .format(path=os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)))
+                .format(path=alignment_path))
 
         # Read alignments from alignments.txt
-        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)) as f:
+        with open(alignment_path) as f:
             for line in f:
                 align = line.split('\n')[0].split('\t')
-                self.alignments[int(align[0])-1] = align[1]
+                alignments[int(align[0])-1] = align[1]
 
-        results     = list()
-        quote_used  = dict()
+        results = self.get_alignments(alignments, quotes)
 
-        """
-        We append paragraphs and any images
-        that are aligned that paragraph
-        """
-        for i, paragraph in enumerate(self.paragraphs):
-            results.append(paragraph)
-
-            app.logger.debug('Appending paragraph {}'.format(i))
-
-            if i in self.alignments:
-
-                app.logger.debug('Appending quote to paragraph {}'.format(i))
-
-                file_name   = self.alignments[i]
-                file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
-
-                """Read in image as base64 string
-                and append to results
-                """
-                with open(file_path) as image:
-
-                    result = {'file_name'   : file_name,
-                              'data'        : base64.b64encode(image.read()).decode('ascii'),
-                              'type'        : self.mime.from_file(file_path),
-                              'quote'       : None
-                             }
-
-                    results.append(result)
-
-                    """ Find best quote with best
-                    cosine similarity to paragraph
-                    """
-                    if quotes:
-
-                        result['quote'] = self.get_best_quote(paragraph, quotes[filename], quote_used)
-
-                        app.logger.debug('Appending quote {quote} with {file_name} to \
-                                        paragraph {i}'.format(quote=result['quote'],
-                                                              file_name=result['file_name'],
-                                                              i=i))
+        app.logger.info('Finished getting optimized alignments')
 
         return results
 
-    def get_random(self, quotes=None):
+    def get_randomized_alignments(self, quotes=None):
         """Randomly assigns at most one image to one paragraph
             quotes (dict, optional): Defaults to None. {filename: quote, ...}
 
         Returns:
             list: elements are either text or images with quotes if given
         """
-        app.logger.info('Randomizing images and text')
+        app.logger.info('Getting randomized alignments')
 
-        results     = list()
-        image_names = self.image_names
-        quote_used  = dict()
+        alignments  = dict()
 
         # sample random numbers
         random_samples = random.sample(range(0, len(self.paragraphs)-1), len(self.image_names))
+
+        for image_ind, para_ind in enumerate(random_samples):
+            alignments[para_ind] = self.image_names[image_ind]
+
+        results = self.get_alignments(alignments, quotes)
+
+        app.logger.info('Finished getting randomized alignments')
+
+        return results
+
+    def get_alignments(self, alignments, quotes):
+        """Aligns paragraphs and images based off of
+        alignments mapping
+
+        Args:
+            alignments (dict): mapping of paragraph number to image name
+            quotes (dict): quotes for each paragraph
+
+        Returns:
+            [list]: aligned text and images
+        """
+
+        app.logger.info('Aligning images and texts')
+
+        paragraphs  = self.paragraphs
+        results     = list()
+        quote_used  = dict()
 
         """
         We append paragraphs and any images
         that are aligned that paragraph
         """
-        cur_ind = 0
-        for i, paragraph in enumerate(self.paragraphs):
+        for i, paragraph in enumerate(paragraphs):
             results.append(paragraph)
 
             app.logger.debug('Appending paragraph {}'.format(i))
 
-            if i in random_samples:
+            if i in alignments:
 
                 app.logger.debug('Appending quote to paragraph {}'.format(i))
 
-                file_name   = image_names[cur_ind]
+                file_name   = alignments[i]
                 file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
 
                 """Read in image as base64 string
@@ -269,10 +261,11 @@ class SandiWorkflow:
                         result['quote'] = self.get_best_quote(paragraph, quotes[filename], quote_used)
 
                         app.logger.debug('Appending quote {quote} with {file_name} to \
-                                          paragraphs {i}'.format(quote=best_quote,
-                                                                 file_name=file_name,
+                                          paragraphs {i}'.format(quote=result['quote'],
+                                                                 file_name=result['file_name'],
                                                                  i=i))
-                cur_ind += 1
+
+        app.logger.info('Finished aligning images and texts')
 
         return results
 
@@ -332,6 +325,8 @@ class SandiWorkflow:
 
         app.logger.debug('Collected {num_images} images'.format(num_images=len(uploaded_images)))
 
+        return len(self.image_names)
+
     def collect_uploaded_texts(self, uploaded_texts):
         """Save texts from user to local filesystem
 
@@ -350,6 +345,8 @@ class SandiWorkflow:
                 f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
 
         app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(self.paragraphs)))
+
+        return len(self.paragraphs)
 
     def create_data_folder(self):
         """Create transient folder to store images, text, and results
