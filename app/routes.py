@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import traceback
 
-import lightnet
-
 from flask import render_template
 from flask import flash
 from flask import redirect

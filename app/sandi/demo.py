@@ -49,7 +49,8 @@ class SandiWorkflow:
         """
         self.folder             = None
         self.image_names        = list()
-        self.paragraphs         = list()
+        self.num_images         = 0
+        self.num_texts          = 0
         self.alignments         = dict()
         self.yolo_resources     = yolo_resources
         self.scene_resources    = scene_resources
@@ -122,7 +123,7 @@ class SandiWorkflow:
         application
         """
 
-        # params = {'work_dir': self.folder, 'num_images': len(self.image_names)}
+        # params = {'work_dir': self.folder, 'num_images': self.num_images}
 
         # try:
         #     response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
@@ -142,7 +143,7 @@ class SandiWorkflow:
                         flags='-jar',
                         jar='/home/willc97/dev/python2.7/SANDI/SANDI_main.jar',
                         data_folder=os.path.abspath(self.folder),
-                        num_images=min(len(self.image_names), len(self.paragraphs)),
+                        num_images=min(self.num_images, self.num_texts),
                         model_folder='/home/willc97/dev/python2.7/SANDI/')
         app.logger.debug('Executing: \n {command}'.format(command=command))
         os.system(command)
@@ -195,7 +196,7 @@ class SandiWorkflow:
         alignments  = dict()
 
         # sample random numbers
-        random_samples = random.sample(range(0, len(self.paragraphs)-1), len(self.image_names))
+        random_samples = random.sample(range(0, self.num_texts-1), self.num_images)
 
         for image_ind, para_ind in enumerate(random_samples):
             alignments[para_ind] = self.image_names[image_ind]
@@ -220,9 +221,12 @@ class SandiWorkflow:
 
         app.logger.info('Aligning images and texts')
 
-        paragraphs  = self.paragraphs
+        paragraphs  = list()
         results     = list()
         quote_used  = dict()
+
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'r') as f:
+            paragraphs = [line.decode('utf8').split('\t').pop() for line in f]
 
         """
         We append paragraphs and any images
@@ -323,9 +327,11 @@ class SandiWorkflow:
 
             self.image_names.append(upload.filename)
 
+        self.num_images = len(self.image_names)
+
         app.logger.debug('Collected {num_images} images'.format(num_images=len(uploaded_images)))
 
-        return len(self.image_names)
+        return self.num_images
 
     def collect_uploaded_texts(self, uploaded_texts):
         """Save texts from user to local filesystem
@@ -335,18 +341,20 @@ class SandiWorkflow:
         """
         app.logger.debug('Saving paragraphs')
 
-        self.paragraphs = list()
+        paragraphs = list()
 
         for input_text in request.files.getlist('texts'):
-            self.paragraphs += input_text.read().decode('cp1252').split('\n')
+            paragraphs += input_text.read().decode('cp1252').split('\n')
+
+        self.num_texts = len(paragraphs)
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'w') as f:
-            for index, paragraph in enumerate(self.paragraphs):
+            for index, paragraph in enumerate(paragraphs):
                 f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
 
-        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(self.paragraphs)))
+        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=self.num_texts))
 
-        return len(self.paragraphs)
+        return self.num_texts
 
     def create_data_folder(self):
         """Create transient folder to store images, text, and results
