@@ -5,7 +5,7 @@ import random
 import base64
 import requests
 
-import magic
+from magic import Magic
 import lightnet
 
 from flask import request
@@ -32,8 +32,9 @@ class SandiWorkflow:
     TAGS_DELIM           = os.environ['TAGS_DELIM']
     IMAGES_FOLDER        = 'images'
 
-    def __init__(self, yolo_resources=None, scene_resources=None,
-                 quote_resources=None, glove_resources=None):
+    def __init__(self, folder=None, num_images=0, num_texts=0,
+                 yolo_resources=None, scene_resources=None, quote_resources=None,
+                 glove_resources=None):
         """Initialization
 
         Initializes the models and neural nets.
@@ -47,11 +48,11 @@ class SandiWorkflow:
         quote_resources (tuple, optional): Defaults to None.
             (model, neural_net, captions, vectors)
         """
-        self.folder             = None
-        self.image_names        = list()
-        self.num_images         = 0
-        self.num_texts          = 0
+        self.folder             = folder
         self.alignments         = dict()
+        self.image_names        = list()
+        self.num_images         = num_images
+        self.num_texts          = num_texts
         self.yolo_resources     = yolo_resources
         self.scene_resources    = scene_resources
         self.quote_resources    = quote_resources
@@ -60,13 +61,19 @@ class SandiWorkflow:
         # self.scene              = SceneDetection(self.scene_resources)
         self.quote              = Quotes(self.quote_resources)
         self.glove              = GloveVectors(self.glove_resources)
-        self.mime               = magic.Magic(mime=True)
+        self.mime               = Magic(mime=True)
 
         app.logger.info('Initiating SANDI pipeline')
 
-        # Create directory to store results and images
+        if self.folder:
+            # Retrieve image names
+            with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+                self.image_names = [line.split('\t').pop(0) for line in f]
+        else:
+            # Create directory to store results and images
+            self.create_data_folder()
 
-        self.create_data_folder()
+        app.logger.info('Finished initiating SANDI pipeline')
 
     def run(self):
         """Get tags from images and runs the sandi
@@ -87,34 +94,29 @@ class SandiWorkflow:
 
         # scene_detection_tags = self.scene.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        # Combine then save tags to folder
+        app.logger.debug('Saving tags to: %s', self.folder)
 
-        app.logger.debug('Combining tags from yolo and scene detection')
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
 
-        try:
-            app.logger.debug('Saving tags to: %s', self.folder)
+            for filename in self.image_names:
 
-            with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
+                union_tags = set()
 
-                for filename in self.image_names:
+                try:
+                    union_tags.update(yolo_tags[filename])
+                except KeyError:
+                    pass
 
-                    union_tags = set()
+                # try:
+                #     union_tags.update(scene_detection_tags[filename])
+                # except KeyError:
+                #     pass
 
-                    try:
-                        union_tags.update(yolo_tags[filename])
-                    except KeyError:
-                        pass
+                f.write('{filename}\t{union_tags}\n'.format(filename=filename,
+                                                            union_tags=(SandiWorkflow.TAGS_DELIM.join(union_tags)) or SandiWorkflow.TAGS_DELIM))
 
-                    # try:
-                    #     union_tags.update(scene_detection_tags[filename])
-                    # except KeyError:
-                    #     pass
-
-                    f.write('{filename}\t{union_tags}\n'.format(filename=filename,
-                                                                union_tags=(SandiWorkflow.TAGS_DELIM.join(union_tags)) or SandiWorkflow.TAGS_DELIM))
-        except Exception as e:
-
-            app.logger.exception(e)
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+            self.image_names = [line.split('\t').pop(0) for line in f]
 
         app.logger.info('Finished SANDI pipeline')
 
@@ -291,6 +293,9 @@ class SandiWorkflow:
             paragraph (str): paragraph to match
             quotes (list: list of quotes to parase through
             quote_used (dict): quotes that have already been used
+
+        Returns:
+            str: quote most related to paragraph and not chosen before
         """
 
         top_score        = 0.0

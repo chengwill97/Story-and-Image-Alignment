@@ -58,7 +58,7 @@ def index():
     """
     return render_template('homepage.html')
 
-@app.route('/demo', methods=['GET', 'POST'])
+@app.route('/demo', methods=['POST'])
 def demo():
     """Page with results of sandi demo
 
@@ -78,29 +78,27 @@ def demo():
                          quote_resources=quote_resources,
                          glove_resources=glove_resources)
 
-    if request.method == 'POST':
+    # Gather and save images and text files
+    num_images = demo.collect_uploaded_images(request.files.getlist('images'))
+    num_texts  = demo.collect_uploaded_texts(request.files.getlist('texts'))
 
-        # Gather and save images and text files
-        num_images = demo.collect_uploaded_images(request.files.getlist('images'))
-        num_texts  = demo.collect_uploaded_texts(request.files.getlist('texts'))
+    # Get tags from yolo and caffe
+    demo.run()
 
-        # Get tags from yolo and caffe
-        demo.run()
+    if 'include_quotes' in request.form:
+        # Get reccomended quotes
+        quotes = demo.get_quotes()
 
-        if 'include_quotes' in request.form:
-            # Get reccomended quotes
-            quotes = demo.get_quotes()
-
-        """Get optimized images and texts, and
-        if alignment somehow fails, we give
-        a randomized order of images and texts
-        """
-        try:
-            results = demo.get_optimized_alignments(quotes=quotes)
-        except Exception as e:
-            app.logger.warn(e)
-            traceback.print_exc()
-            results = demo.get_randomized_alignments(quotes=quotes)
+    """Get optimized images and texts, and
+    if alignment somehow fails, we give
+    a randomized order of images and texts
+    """
+    try:
+        results = demo.get_optimized_alignments(quotes=quotes)
+    except Exception as e:
+        app.logger.warn(e)
+        traceback.print_exc()
+        results = demo.get_randomized_alignments(quotes=quotes)
 
     app.logger.info('Handled Demo Request')
 
