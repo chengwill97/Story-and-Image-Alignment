@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container"></div>
-<div class="jumbotron">
 <h1 class="display-4">Your Story and Images are Aligned!</h1>
 
 {% if num_images %}
@@ -22,10 +20,10 @@
 {% for result in results %}
     {% if result.type %}
         <img src="data:{{result.type}}};base64,{{result.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
-        
+
         {% if result.quote %}
             <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
-        {% endif %}        
+        {% endif %}
 
     {% else %}
         <p> {{ result }} </p>
