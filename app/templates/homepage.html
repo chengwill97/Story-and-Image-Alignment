@@ -1,45 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <div class="container">
-        <div class="jumbotron">
-     
-            <h1 class="display-4">Input Your Text and Images</h1>
+    <h1 class="display-4">Input Your Text and Images</h1>
 
-            <br>
+    <br>
 
-            <form method="post" id="input_form" action="/demo" enctype="multipart/form-data">
+    <form method="post" id="input_form" action="/demo" enctype="multipart/form-data">
 
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Images</span>
-                    </div>
-                    <div class="custom-file">
-                        <input type="file" name="images" class="custom-file-input" id="inputImages" multiple>
-                        <label class="custom-file-label" for="inputImages">Choose images</label>
-                    </div>
-                </div>
-
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text">Text</span>
-                    </div>
-                    <div class="custom-file">
-                        <input type="file" name="texts" class="custom-file-input" id="inputText" multiple>
-                        <label class="custom-file-label" for="inputText">Choose text</label>
-                    </div>
-                </div>
-
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="include_quotes" name="include_quotes">
-                    <label class="form-check-label" for="include_quotes">Include Captions</label>
-                </div>
-
-                <br>
-                
-                <button type="submit" value="Upload" form="input_form" class="btn btn-primary" multiple>Make my post!</button>   
-            </form>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Images</span>
+            </div>
+            <div class="custom-file">
+                <input type="file" name="images" class="custom-file-input" id="inputImages" multiple>
+                <label class="custom-file-label" for="inputImages">Choose images</label>
+            </div>
         </div>
-    </div>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Text</span>
+            </div>
+            <div class="custom-file">
+                <input type="file" name="texts" class="custom-file-input" id="inputText" multiple>
+                <label class="custom-file-label" for="inputText">Choose text</label>
+            </div>
+        </div>
+
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="include_quotes" name="include_quotes">
+            <label class="form-check-label" for="include_quotes">Include Captions</label>
+        </div>
+
+        <br>
+
+        <button type="submit" value="Upload" form="input_form" class="btn btn-primary" multiple>Make my post!</button>
+    </form>
 
 {% endblock %}

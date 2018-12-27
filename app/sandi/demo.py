@@ -5,6 +5,7 @@ import random
 import base64
 import requests
 
+from magic import Magic
 import lightnet
 
 from flask import request
@@ -31,8 +32,9 @@ class SandiWorkflow:
     TAGS_DELIM           = os.environ['TAGS_DELIM']
     IMAGES_FOLDER        = 'images'
 
-    def __init__(self, yolo_resources=None, scene_resources=None,
-                 quote_resources=None, glove_resources=None):
+    def __init__(self, folder=None, num_images=0, num_texts=0,
+                 yolo_resources=None, scene_resources=None, quote_resources=None,
+                 glove_resources=None):
         """Initialization
 
         Initializes the models and neural nets.
@@ -46,24 +48,32 @@ class SandiWorkflow:
         quote_resources (tuple, optional): Defaults to None.
             (model, neural_net, captions, vectors)
         """
-        self.images_base64      = dict()
-        self.paragraphs         = list()
+        self.folder             = folder
         self.alignments         = dict()
-        self.folder             = None
+        self.image_names        = list()
+        self.num_images         = num_images
+        self.num_texts          = num_texts
         self.yolo_resources     = yolo_resources
         self.scene_resources    = scene_resources
         self.quote_resources    = quote_resources
         self.glove_resources    = glove_resources
-        self.yolo               = Yolo          (self.yolo_resources)
+        self.yolo               = Yolo(self.yolo_resources)
         # self.scene              = SceneDetection(self.scene_resources)
-        self.quote              = Quotes        (self.quote_resources)
-        self.glove              = GloveVectors  (self.glove_resources)
+        self.quote              = Quotes(self.quote_resources)
+        self.glove              = GloveVectors(self.glove_resources)
+        self.mime               = Magic(mime=True)
 
         app.logger.info('Initiating SANDI pipeline')
 
-        # Create directory to store results and images
+        if self.folder:
+            # Retrieve image names
+            with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+                self.image_names = [line.split('\t').pop(0) for line in f]
+        else:
+            # Create directory to store results and images
+            self.create_data_folder()
 
-        self.create_data_folder()
+        app.logger.info('Finished initiating SANDI pipeline')
 
     def run(self):
         """Get tags from images and runs the sandi
@@ -80,38 +90,33 @@ class SandiWorkflow:
 
         # Obtain tags from the yolo and scene detection models
 
-        yolo_tags = self.yolo.run(self.images_base64)
+        yolo_tags = self.yolo.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        # scene_detection_tags = self.scene.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        # scene_detection_tags = self.scene.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        # Combine then save tags to folder
+        app.logger.debug('Saving tags to: %s', self.folder)
 
-        app.logger.debug('Combining tags from yolo and scene detection')
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
 
-        try:
-            app.logger.debug('Saving tags to: %s', self.folder)
+            for filename in self.image_names:
 
-            with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
+                union_tags = set()
 
-                for filename in self.images_base64.keys():
+                try:
+                    union_tags.update(yolo_tags[filename])
+                except KeyError:
+                    pass
 
-                    union_tags = set()
+                # try:
+                #     union_tags.update(scene_detection_tags[filename])
+                # except KeyError:
+                #     pass
 
-                    try:
-                        union_tags.update(yolo_tags[filename])
-                    except KeyError:
-                        pass
+                f.write('{filename}\t{union_tags}\n'.format(filename=filename,
+                                                            union_tags=(SandiWorkflow.TAGS_DELIM.join(union_tags)) or SandiWorkflow.TAGS_DELIM))
 
-                    # try:
-                    #     union_tags.update(scene_detection_tags[filename])
-                    # except KeyError:
-                    #     pass
-
-                    f.write('{filename}\t{union_tags}\n'.format(filename=filename,
-                                                                union_tags=(SandiWorkflow.TAGS_DELIM.join(union_tags)) or SandiWorkflow.TAGS_DELIM))
-        except Exception as e:
-
-            app.logger.exception(e)
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+            self.image_names = [line.split('\t').pop(0) for line in f]
 
         app.logger.info('Finished SANDI pipeline')
 
@@ -120,7 +125,7 @@ class SandiWorkflow:
         application
         """
 
-        # params = {'work_dir': self.folder, 'num_images': len(self.images_base64)}
+        # params = {'work_dir': self.folder, 'num_images': self.num_images}
 
         # try:
         #     response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
@@ -140,12 +145,12 @@ class SandiWorkflow:
                         flags='-jar',
                         jar='/home/willc97/dev/python2.7/SANDI/SANDI_main.jar',
                         data_folder=os.path.abspath(self.folder),
-                        num_images=min(len(self.images_base64), len(self.paragraphs)),
+                        num_images=min(self.num_images, self.num_texts),
                         model_folder='/home/willc97/dev/python2.7/SANDI/')
         app.logger.debug('Executing: \n {command}'.format(command=command))
         os.system(command)
 
-    def get_alignment(self, quotes=None):
+    def get_optimized_alignments(self, quotes=None):
         """Get alignment from 'path/to/alignments.txt'
             quotes ([dict], optional): Defaults to None. match of quote to image
 
@@ -156,66 +161,117 @@ class SandiWorkflow:
             dict: maps paragraph number to image name
                 e.g. {para_id, filename, ...}
         """
-        if not os.path.exists(os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)):
+
+        app.logger.info('Getting optimized alignments')
+
+        results        = list()
+        quote_used     = dict()
+        alignments     = dict()
+        alignment_path = os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)
+
+        # Check that alignment file exists
+        if not os.path.exists(alignment_path):
             raise Exception('file "{path}" does not exist' \
-                .format(path=os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)))
+                .format(path=alignment_path))
 
         # Read alignments from alignments.txt
-        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)) as f:
+        with open(alignment_path) as f:
             for line in f:
                 align = line.split('\n')[0].split('\t')
-                self.alignments[int(align[0])-1] = align[1]
+                alignments[int(align[0])-1] = align[1]
 
-        image_names = list(self.images_base64.keys())
+        results = self.get_alignments(alignments, quotes)
+
+        app.logger.info('Finished getting optimized alignments')
+
+        return results
+
+    def get_randomized_alignments(self, quotes=None):
+        """Randomly assigns at most one image to one paragraph
+            quotes (dict, optional): Defaults to None. {filename: quote, ...}
+
+        Returns:
+            list: elements are either text or images with quotes if given
+        """
+        app.logger.info('Getting randomized alignments')
+
+        alignments  = dict()
+
+        # sample random numbers
+        random_samples = random.sample(range(0, self.num_texts-1), self.num_images)
+
+        for image_ind, para_ind in enumerate(random_samples):
+            alignments[para_ind] = self.image_names[image_ind]
+
+        results = self.get_alignments(alignments, quotes)
+
+        app.logger.info('Finished getting randomized alignments')
+
+        return results
+
+    def get_alignments(self, alignments, quotes):
+        """Aligns paragraphs and images based off of
+        alignments mapping
+
+        Args:
+            alignments (dict): mapping of paragraph number to image name
+            quotes (dict): quotes for each paragraph
+
+        Returns:
+            [list]: aligned text and images
+        """
+
+        app.logger.info('Aligning images and texts')
+
+        paragraphs  = list()
         results     = list()
         quote_used  = dict()
+
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'r') as f:
+            paragraphs = [line.decode('utf8').split('\t').pop() for line in f]
 
         """
         We append paragraphs and any images
         that are aligned that paragraph
         """
-
-        for i in range(len(self.paragraphs)):
-            results.append(self.paragraphs[i])
+        for i, paragraph in enumerate(paragraphs):
+            results.append(paragraph)
 
             app.logger.debug('Appending paragraph {}'.format(i))
 
-            if i in self.alignments:
+            if i in alignments:
 
                 app.logger.debug('Appending quote to paragraph {}'.format(i))
 
-                file_name   = self.alignments[i]
-                image_bytes = self.images_base64[file_name]['data']
-                image64     = base64.b64encode(image_bytes).decode('ascii')
+                file_name   = alignments[i]
+                file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
 
-                results.append({'file_name': file_name,
-                                'data': image64,
-                                'type': self.images_base64[file_name]['type']})
+                """Read in image as base64 string
+                and append to results
+                """
+                with open(file_path) as image:
 
-                # Find best quote with best cosine similarity to paragraph
-                if quotes:
+                    result = {'file_name'   : file_name,
+                              'data'        : base64.b64encode(image.read()).decode('ascii'),
+                              'type'        : self.mime.from_file(file_path),
+                              'quote'       : None
+                            }
 
-                    vector_paragraph = self.glove.sentence_to_vec(self.paragraphs[i])
-                    vector_quote = None
+                    results.append(result)
 
-                    best_score = 0.0
+                    """ Find best quote with best
+                    cosine similarity to paragraph
+                    """
+                    if quotes:
 
-                    for top_quote in quotes[file_name]:
-                        # do not include duplicates
-                        if top_quote in quote_used:
-                            continue
+                        result['quote'] = self.get_best_quote(paragraph, quotes[file_name], quote_used)
 
-                        vector_quote = self.glove.sentence_to_vec(top_quote)
-                        score = self.glove.cosine(vector_paragraph, vector_quote)
+                        app.logger.debug('Appending quote {quote} with {file_name} to \
+                                          paragraphs {i}'.format(quote=result['quote'],
+                                                                 file_name=result['file_name'],
+                                                                 i=i))
 
-                        # update quote with closest match
-                        if score > best_score:
-                            results[-1]['quote'] = top_quote
-
-                    app.logger.debug('Appending quote {quote} with {file_name} to \
-                                    paragraphs {i}'.format(quote=quotes[file_name],
-                                                            file_name=file_name,
-                                                            i=i))
+        app.logger.info('Finished aligning images and texts')
 
         return results
 
@@ -223,11 +279,44 @@ class SandiWorkflow:
         """Runs quote suggestion applicaiton
 
         Returns:
-            dict: {filename: [quote1, quote2, ...], ...}
+            dict: {file name: [quote1, quote2, ...], ...}
         """
-        quotes = self.quote.run(self.images_base64.keys(), os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        quotes = self.quote.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         return quotes
+
+    def get_best_quote(self, paragraph, quotes, quote_used):
+        """Finds best matching quote to paragraph
+        based off of cosine similarity scores
+
+        Args:
+            paragraph (str): paragraph to match
+            quotes (list: list of quotes to parase through
+            quote_used (dict): quotes that have already been used
+
+        Returns:
+            str: quote most related to paragraph and not chosen before
+        """
+
+        top_score        = 0.0
+        top_quote        = None
+        vector_quote     = None
+        vector_paragraph = self.glove.sentence_to_vec(paragraph)
+
+        for quote in quotes:
+
+            # do not include duplicates
+            if quote in quote_used:
+                continue
+
+            vector_quote    = self.glove.sentence_to_vec(quote)
+            score           = self.glove.cosine(vector_paragraph, vector_quote)
+
+            # update quote with closest match
+            if score > top_score:
+                top_quote = quote
+
+        return top_quote
 
     def collect_uploaded_images(self, uploaded_images):
         """Save images from user to local filesystem
@@ -241,15 +330,13 @@ class SandiWorkflow:
 
             upload.save(os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, upload.filename))
 
-            upload.seek(0)
+            self.image_names.append(upload.filename)
 
-            upload_bytes = io.BytesIO(upload.read()).read()
-
-            image_data = {'data': upload_bytes, 'type': upload.content_type}
-
-            self.images_base64[upload.filename] = image_data
+        self.num_images = len(self.image_names)
 
         app.logger.debug('Collected {num_images} images'.format(num_images=len(uploaded_images)))
+
+        return self.num_images
 
     def collect_uploaded_texts(self, uploaded_texts):
         """Save texts from user to local filesystem
@@ -259,16 +346,20 @@ class SandiWorkflow:
         """
         app.logger.debug('Saving paragraphs')
 
-        self.paragraphs = list()
+        paragraphs = list()
 
         for input_text in request.files.getlist('texts'):
-            self.paragraphs += input_text.read().decode('cp1252').split('\n')
+            paragraphs += input_text.read().decode('cp1252').split('\n')
+
+        self.num_texts = len(paragraphs)
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'w') as f:
-            for index, paragraph in enumerate(self.paragraphs):
+            for index, paragraph in enumerate(paragraphs):
                 f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
 
-        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=len(self.paragraphs)))
+        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=self.num_texts))
+
+        return self.num_texts
 
     def create_data_folder(self):
         """Create transient folder to store images, text, and results
@@ -298,65 +389,6 @@ class SandiWorkflow:
             shutil.rmtree(self.folder)
         except Exception:
             pass
-
-    def randomize(self, quotes=None):
-        """Randomly assigns at most one image to one paragraph
-            quotes (dict, optional): Defaults to None. {filename: quote, ...}
-
-        Returns:
-            list: elements are either text or images with quotes if given
-        """
-        app.logger.info('Randomizing images and text')
-
-        randomized  = list()
-        image_names = list(self.images_base64.keys())
-        quote_used  = dict()
-
-        # sample random numbers
-        randomized_ind = random.sample(range(0, len(self.paragraphs)-1), len(self.images_base64))
-
-        cur_ind = 0
-        for i in range(len(self.paragraphs)):
-            randomized.append(self.paragraphs[i])
-            if i in randomized_ind:
-                file_name = image_names[cur_ind]
-                image_bytes = self.images_base64[file_name]['data']
-                image64 = base64.b64encode(image_bytes).decode('ascii')
-
-                randomized.append({'file_name': file_name,'data': image64, 'type': self.images_base64[file_name]['type']})
-
-                # Find best quote with best cosine similarity to paragraph
-                if quotes:
-                    vector_paragraph = self.glove.sentence_to_vec(self.paragraphs[i])
-                    vector_quote = None
-
-                    best_score = 0.0
-
-                    for top_quote in quotes[filename]:
-                        # do not include duplicates
-                        if top_quote in quote_used:
-                            continue
-
-                        vector_quote = self.glove.sentence_to_vec(top_quote)
-                        score = self.glove.cosine(vector_paragraph, vector_quote)
-
-                        # update quote with closest match
-                        if score > best_score:
-                            results[-1]['quote'] = top_quote
-
-                    app.logger.debug('Appending quote {quote} with {file_name} to \
-                                    paragraphs {i}'.format(quote=quotes[file_name],
-                                                            file_name=file_name,
-                                                            i=i))
-
-                # if quotes:
-                #     randomized[-1]['quote'] = quotes[file_name]
-
-                #     app.logger.debug('Appending quote {quote} to {file_name}'.format(quote=quotes[file_name],file_name=file_name))
-
-                cur_ind += 1
-
-        return randomized
 
     @staticmethod
     def load_yolo_resources():

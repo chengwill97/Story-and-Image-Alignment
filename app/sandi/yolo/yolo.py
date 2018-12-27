@@ -19,13 +19,14 @@ class Yolo:
         """
         self.model = model
 
-    def run(self, images):
+    def run(self, file_names, images_dir):
         """Runs YoloV2 Application
 
         Runs YoloV2 application and gathers tags from results
 
         Args:
-            images (dict): {filename: {'data': byte64, 'conten_type': mime_type}, ...}
+            file_names (list): list of file names
+            images_dir (str): path of directory where images are stored
 
         Returns:
             dict: {filename: [tag1, tag2, ...]}
@@ -34,16 +35,25 @@ class Yolo:
 
         yolo_tags = dict()
 
-        for filename, image_bytes in images.items():
+        for file_name in file_names:
 
-            # The thresh parameter controls the prediction threshold.
-            # Objects with a detection probability above thresh are returned.
-            lightnet_image = lightnet.Image.from_bytes(image_bytes['data'])
-            boxes = self.model(lightnet_image, thresh=0.15)
+            image_path = os.path.join(images_dir, file_name)
 
-            yolo_tags[filename] = set([box[1] for box in boxes])
+            tags = set()
 
-            app.logger.debug('Yolo tags {filename}: {results}'.format(filename=filename, results=yolo_tags[filename]))
+            with open(image_path, 'rb') as image:
+
+                lightnet_image = lightnet.Image.from_bytes(image.read())
+
+                # The thresh parameter controls the prediction threshold.
+                # Objects with a detection probability above thresh are returned.
+                boxes = self.model(lightnet_image, thresh=0.15)
+
+                [tags.add(box[1]) for box in boxes]
+
+            yolo_tags[file_name] = tags
+
+            app.logger.debug('Yolo tags {file_name}: {results}'.format(file_name=file_name, results=tags))
 
         app.logger.info('Finished yolo analysis')
 
