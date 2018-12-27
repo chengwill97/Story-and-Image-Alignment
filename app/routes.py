@@ -44,8 +44,8 @@ def initServer():
     global yolo_resources, scene_resources, quote_resources, glove_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
-    quote_resources = None #SandiWorkflow.load_quote_resources()
-    glove_resources = None #SandiWorkflow.load_glove_resources()
+    quote_resources = SandiWorkflow.load_quote_resources()
+    glove_resources = SandiWorkflow.load_glove_resources()
 
     app.logger.info('Server set up')
 

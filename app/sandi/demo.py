@@ -264,7 +264,7 @@ class SandiWorkflow:
                     """
                     if quotes:
 
-                        result['quote'] = self.get_best_quote(paragraph, quotes[filename], quote_used)
+                        result['quote'] = self.get_best_quote(paragraph, quotes[file_name], quote_used)
 
                         app.logger.debug('Appending quote {quote} with {file_name} to \
                                           paragraphs {i}'.format(quote=result['quote'],
@@ -279,7 +279,7 @@ class SandiWorkflow:
         """Runs quote suggestion applicaiton
 
         Returns:
-            dict: {filename: [quote1, quote2, ...], ...}
+            dict: {file name: [quote1, quote2, ...], ...}
         """
         quotes = self.quote.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
