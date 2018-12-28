@@ -30,7 +30,7 @@ class SandiWorkflow:
     FILENAME_TEXT        = os.environ['FILENAME_TEXT']
     FILENAME_ALIGN       = os.environ['FILENAME_ALIGN']
     TAGS_DELIM           = os.environ['TAGS_DELIM']
-    IMAGES_FOLDER        = 'images'
+    IMAGES_FOLDER        = os.environ['IMAGES_FOLDER']
 
     def __init__(self, folder=None, num_images=0, num_texts=0,
                  yolo_resources=None, scene_resources=None, quote_resources=None,
