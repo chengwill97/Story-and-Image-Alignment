@@ -10,6 +10,7 @@ class Yolo:
         None
     """
     YOLO_MODEL = os.environ['YOLO_MODEL_NAME']
+    THRESH     = 0.9
 
     def __init__(self, model):
         """Initializes model
@@ -47,7 +48,7 @@ class Yolo:
 
                 # The thresh parameter controls the prediction threshold.
                 # Objects with a detection probability above thresh are returned.
-                boxes = self.model(lightnet_image, thresh=0.15)
+                boxes = self.model(lightnet_image, thresh=Yolo.THRESH)
 
                 [tags.add(box[1]) for box in boxes]
 

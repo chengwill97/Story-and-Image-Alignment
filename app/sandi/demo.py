@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import shutil
 import random
 import base64
@@ -30,7 +31,7 @@ class SandiWorkflow:
     FILENAME_TEXT        = os.environ['FILENAME_TEXT']
     FILENAME_ALIGN       = os.environ['FILENAME_ALIGN']
     TAGS_DELIM           = os.environ['TAGS_DELIM']
-    IMAGES_FOLDER        = 'images'
+    IMAGES_FOLDER        = os.environ['IMAGES_FOLDER']
 
     def __init__(self, folder=None, num_images=0, num_texts=0,
                  yolo_resources=None, scene_resources=None, quote_resources=None,
@@ -66,6 +67,8 @@ class SandiWorkflow:
         app.logger.info('Initiating SANDI pipeline')
 
         if self.folder:
+            app.logger.debug('Retrieving image names')
+
             # Retrieve image names
             with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
                 self.image_names = [line.split('\t').pop(0) for line in f]
@@ -85,40 +88,65 @@ class SandiWorkflow:
     def run_tags(self):
         """Runs the Yolo and Scene detection applications
         and saves the results to run image to text optimization
+
+        Returns:
+            list: images with missing tags
+                  e.g. [{'file_name': file_name,
+                          'data': byte64_string,
+                          'type': mime-type
+                         }, ...]
         """
-        app.logger.info('Running SANDI pipeline')
+        app.logger.info('Retrieving tags from images')
+
+        images_missing_tags = list()
 
         # Obtain tags from the yolo and scene detection models
-
-        yolo_tags = self.yolo.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
-
-        # scene_detection_tags = self.scene.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        yolo_tags = self.yolo.run(self.image_names,
+                                  os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        # scene_detection_tags = self.scene.run(self.image_names,
+        #                                       os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         app.logger.debug('Saving tags to: %s', self.folder)
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
 
-            for filename in self.image_names:
+            for file_name in self.image_names:
 
                 union_tags = set()
 
                 try:
-                    union_tags.update(yolo_tags[filename])
+                    union_tags.update(yolo_tags[file_name])
                 except KeyError:
                     pass
 
                 # try:
-                #     union_tags.update(scene_detection_tags[filename])
+                #     union_tags.update(scene_detection_tags[file_name])
                 # except KeyError:
                 #     pass
 
-                f.write('{filename}\t{union_tags}\n'.format(filename=filename,
-                                                            union_tags=(SandiWorkflow.TAGS_DELIM.join(union_tags)) or SandiWorkflow.TAGS_DELIM))
+                tags = SandiWorkflow.TAGS_DELIM.join(union_tags) or SandiWorkflow.TAGS_DELIM
 
-        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
-            self.image_names = [line.split('\t').pop(0) for line in f]
+                f.write('{file_name}\t{union_tags}\n'
+                        .format(file_name=file_name, union_tags=tags))
 
-        app.logger.info('Finished SANDI pipeline')
+                """Add file name and image data
+                to list of images with missing tags
+                """
+                if not union_tags:
+                    file_path = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
+
+                    with open(file_path, 'r') as image:
+                        image_missing_tags = {'file_name'   : file_name,
+                                            #   'data'        : base64.b64encode(image.read()).decode('ascii'),
+                                              'type'        : self.mime.from_file(file_path),
+                                           }
+
+                        images_missing_tags.append(json.dumps(image_missing_tags))
+
+        app.logger.info('Finished retrieving tags from images with {num_missing} images missing tags'
+                        .format(num_missing=len(images_missing_tags)))
+
+        return images_missing_tags
 
     def run_alignment(self):
         """Runs sandi image and text alignment
@@ -218,7 +246,7 @@ class SandiWorkflow:
             quotes (dict): quotes for each paragraph
 
         Returns:
-            [list]: aligned text and images
+            list: aligned text and images
         """
 
         app.logger.info('Aligning images and texts')
@@ -249,7 +277,7 @@ class SandiWorkflow:
                 """Read in image as base64 string
                 and append to results
                 """
-                with open(file_path) as image:
+                with open(file_path, 'r') as image:
 
                     result = {'file_name'   : file_name,
                               'data'        : base64.b64encode(image.read()).decode('ascii'),
@@ -334,7 +362,7 @@ class SandiWorkflow:
 
         self.num_images = len(self.image_names)
 
-        app.logger.debug('Collected {num_images} images'.format(num_images=len(uploaded_images)))
+        app.logger.info('Collected {num_images} images'.format(num_images=len(uploaded_images)))
 
         return self.num_images
 
@@ -357,9 +385,66 @@ class SandiWorkflow:
             for index, paragraph in enumerate(paragraphs):
                 f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
 
-        app.logger.debug('Collected {num_texts} paragraphs'.format(num_texts=self.num_texts))
+        app.logger.info('Collected {num_texts} paragraphs'.format(num_texts=self.num_texts))
 
         return self.num_texts
+
+    def collect_missing_tags(self, form):
+        """Save tags from user to local filesystem
+
+        Args:
+            form (ImmutableMultiDicti): Tuple mapping of filename to tags
+
+        Returns:
+            dict: maps filename to tags
+        """
+
+        app.logger.debug('Saving tags')
+
+        user_tags = form.to_dict()
+
+        app.logger.debug('full_tags {}'.format(user_tags))
+
+        full_tags = dict()
+
+        """Include only images with tags.
+        If new valid tags are available, use those first.
+        Other wise, if original tags are available, use those.
+        The last case is to use an empty list indicating that
+        we don't want this image to be included in the alignments.
+        """
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+            for line in f:
+                line_split = line.split('\t')
+                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(',')])
+                image_name = line_split.pop()
+
+                try:
+                    uploaded_tags = filter(None, [tag.strip() for tag in user_tags[image_name].split(',')])
+                except:
+                    pass
+
+                if image_name in user_tags and uploaded_tags:
+                    app.logger.debug('Using uploaded tags for image {image_name}: {tags}'.format(image_name=image_name, tags=uploaded_tags))
+                    full_tags[image_name] = uploaded_tags
+                elif image_tags:
+                    app.logger.debug('Using current tags for image {image_name}: {tags}'.format(image_name=image_name, tags=image_tags))
+                    full_tags[image_name] = image_tags
+                else:
+                    app.logger.debug('No tags for image {image_name}'.format(image_name=image_name))
+                    full_tags[image_name] = list()
+
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
+            for file_name, tags in full_tags.items():
+
+                new_tags = SandiWorkflow.TAGS_DELIM.join(tags) or SandiWorkflow.TAGS_DELIM
+
+                f.write('{file_name}\t{tags}\n'
+                        .format(file_name=file_name, tags=new_tags))
+
+        app.logger.info('Collected tags from user')
+
+        return full_tags
 
     def create_data_folder(self):
         """Create transient folder to store images, text, and results
