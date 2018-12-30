@@ -158,7 +158,6 @@ def demo():
     a randomized order of images and texts
     """
     try:
-        # demo.run_alignment()
         results = demo.get_optimized_alignments(quotes=quotes)
     except Exception as e:
         app.logger.warn(e)
