@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h1 class="display-4">Missing Tags</h1>
+
+    <br>
+
+    <p>Fill in tags for each image, separated by commas</p>
+
+    <br>
+
+    <form method="post" id="input_form" action="{{ url_for('demo') }}" enctype="multipart/form-data">
+
+        {% for image_missing_tags in images_missing_tags %}
+
+            <div class="form-group row">
+                <!-- <label for="{{ image_missing_tags.file_name }}" class="col-1 col-form-label">{{ image_missing_tags.file_name }}</label> -->
+                <div class="col-5">
+                    <input class="form-control" type="text" placeholder="Leave blank to discard image"
+                           id="{{ image_missing_tags.file_name }}" name="{{ image_missing_tags.file_name }}">
+                </div>
+                <div class="col-5">
+                    <!-- <input class="form-control" type="text" value="Artisanal kale" id="{{ image_missing_tags.file_name }}"> -->
+                    <img src="data:{{ image_missing_tags.type }};base64,{{ image_missing_tags.data }}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                </div>
+            </div>
+
+        {% endfor %}
+
+        <br>
+
+        <button type="submit" value="Upload" form="input_form" class="btn btn-primary" multiple>Confirm Input Tags!</button>
+    </form>
+
+{% endblock %}
