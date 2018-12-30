@@ -389,7 +389,6 @@ class SandiWorkflow:
 
         return self.num_texts
 
-
     def collect_missing_tags(self, form):
         """Save tags from user to local filesystem
 
@@ -402,27 +401,46 @@ class SandiWorkflow:
 
         app.logger.debug('Saving tags')
 
-        uploaded_tags = form.to_dict()
+        user_tags = form.to_dict()
+
+        app.logger.debug('full_tags {}'.format(user_tags))
 
         full_tags = dict()
 
+        """Include only images with tags.
+        If new valid tags are available, use those first.
+        Other wise, if original tags are available, use those.
+        The last case is to use an empty list indicating that
+        we don't want this image to be included in the alignments.
+        """
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
             for line in f:
                 line_split = line.split('\t')
-                image_tags = [tag.strip() for tag in line_split.pop().split(',')]
+                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(',')])
                 image_name = line_split.pop()
 
-                if image_name in uploaded_tags:
-                    full_tags[image_name] = uploaded_tags[image_name]
-                else:
+                try:
+                    uploaded_tags = filter(None, [tag.strip() for tag in user_tags[image_name].split(',')])
+                except:
+                    pass
+
+                if image_name in user_tags and uploaded_tags:
+                    app.logger.debug('Using uploaded tags for image {image_name}: {tags}'.format(image_name=image_name, tags=uploaded_tags))
+                    full_tags[image_name] = uploaded_tags
+                elif image_tags:
+                    app.logger.debug('Using current tags for image {image_name}: {tags}'.format(image_name=image_name, tags=image_tags))
                     full_tags[image_name] = image_tags
+                else:
+                    app.logger.debug('No tags for image {image_name}'.format(image_name=image_name))
+                    full_tags[image_name] = list()
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
-
             for file_name, tags in full_tags.items():
 
-                f.write('{file_name}\t{union_tags}\n'
-                        .format(file_name=file_name, union_tags=tags))
+                new_tags = SandiWorkflow.TAGS_DELIM.join(tags) or SandiWorkflow.TAGS_DELIM
+
+                f.write('{file_name}\t{tags}\n'
+                        .format(file_name=file_name, tags=new_tags))
 
         app.logger.info('Collected tags from user')
 
