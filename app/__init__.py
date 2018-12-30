@@ -11,5 +11,6 @@ load_dotenv(dotenv_path)
 TEMP_DATA_PATH = os.environ['TEMP_DATA_PATH']
 
 app = Flask(__name__)
+app.secret_key = os.environ['DEV_SECRET_KEY']
 
 from app import routes
