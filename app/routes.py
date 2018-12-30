@@ -59,6 +59,14 @@ def index():
     Returns:
         template: template of home page
     """
+
+    app.logger.info('Starting new session')
+
+    # Reset session
+    session.pop('folder', None)
+    session.pop('num_images', 0)
+    session.pop('num_texts', 0)
+
     return render_template('homepage.html')
 
 @app.route('/demo/imagesMissingTags')
@@ -68,7 +76,10 @@ def images_missing_tags():
     Returns:
         template: template to get more tags
     """
-    folder = session['folder']
+    try:
+        folder = session['folder']
+    except:
+        return redirect(url_for('index'))
 
     images_missing_tags = [json.loads(i) for i in request.args.getlist('images_missing_tags')]
 
@@ -81,7 +92,6 @@ def images_missing_tags():
 
     app.logger.debug('images_missing_tags')
 
-    # return redirect(url_for('index'))
     return render_template('images_missing_tags.html',
                             images_missing_tags=images_missing_tags)
 
