@@ -82,16 +82,15 @@ def images_missing_tags():
     images_missing_tags = list()
     mime                = Magic(mime=True)
 
-    if request.method == 'GET':
-        return render_template('images_missing_tags.html',
-                        images_missing_tags=images_missing_tags)
-
     try:
         folder = session['folder']
     except:
         return redirect(url_for('index'))
 
-    file_names = request.args.getlist('images_missing_tags')
+    try:
+        file_names = request.args.getlist('images_missing_tags')
+    except:
+        pass
 
     for file_name in file_names:
         file_path = os.path.join(folder, SandiWorkflow.IMAGES_FOLDER, file_name)
