@@ -1,34 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1 class="display-4">Your Story and Images are Aligned!</h1>
+    <h1 class="display-4" id="top">Your Story and Images are Aligned!</h1>
 
-{% if num_images %}
-    <button type="button" class="btn btn-primary">Images <span class="badge badge-light">{{ num_images }}</span></button>
-{% else %}
-    <button type="button" class="btn btn-secondary">Images <span class="badge badge-light">{{ num_images }}</span></button>
-{% endif %}
-
-{% if num_texts %}
-    <button type="button" class="btn btn-primary">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
-{% else %}
-    <button type="button" class="btn btn-secondary">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
-{% endif %}
-
-<hr>
-
-{% for result in results %}
-    {% if result.type %}
-        <img src="data:{{result.type}}};base64,{{result.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
-
-        {% if result.quote %}
-            <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
-        {% endif %}
-
+    {% if num_images %}
+        <button type="button" class="btn btn-info">Images <span class="badge badge-light">{{ num_images }}</span></button>
     {% else %}
-        <p> {{ result }} </p>
+        <button type="button" class="btn btn-secondary">Images <span class="badge badge-light">{{ num_images }}</span></button>
     {% endif %}
-{% endfor %}
 
+    {% if num_texts %}
+        <button type="button" class="btn btn-info">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
+    {% else %}
+        <button type="button" class="btn btn-secondary">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
+    {% endif %}
+
+    <br>
+    <br>
+
+    <a href="{{ url_for('index') }}" class="btn btn-primary" role="button">Create Another Article</a>
+
+    <hr>
+
+    {% for result in results %}
+        {% if result.type %}
+            <img src="data:{{result.type}}};base64,{{result.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
+
+            {% if result.quote %}
+                <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
+            {% endif %}
+
+        {% else %}
+            <p> {{ result }} </p>
+        {% endif %}
+    {% endfor %}
+
+    {% if results %}
+        <hr>
+
+        <a href="#top" class="btn btn-primary" role="button">Back to Top</a>
+    {% endif %}
 
 {% endblock %}
