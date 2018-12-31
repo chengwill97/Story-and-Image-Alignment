@@ -102,7 +102,7 @@ def images_missing_tags():
     return render_template('images_missing_tags.html',
                             images_missing_tags=images_missing_tags)
 
-@app.route('/demo', methods=['POST'])
+@app.route('/demo', methods=['GET', 'POST'])
 def demo():
     """Page with results of sandi demo
 
@@ -118,6 +118,10 @@ def demo():
     num_images     = session.pop('num_images', 0)
     num_texts      = session.pop('num_texts', 0)
     include_quotes = session.pop('include_quotes', False)
+
+    if request.method == 'GET':
+        return render_template('demo.html', num_images=0, num_texts=0,
+                                results=results)
 
     # Initialize workflow for SANDI demo
     demo = SandiWorkflow(folder=folder,
@@ -182,7 +186,5 @@ def demo():
 
     app.logger.info('Handled Demo Request')
 
-    return render_template('demo.html',
-                            num_images=num_images,
-                            num_texts=num_texts,
+    return render_template('demo.html', num_images=num_images, num_texts=num_texts,
                             results=results)
