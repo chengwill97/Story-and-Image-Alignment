@@ -1,35 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <h1 class="display-4">Missing Tags</h1>
+    <h1 class="display-4">User Assistance Required</h1>
 
     <br>
 
-    <p>Fill in tags for each image, separated by commas</p>
+    <div class="alert alert-danger" role="alert">
 
-    <br>
-
-    <form method="post" id="input_form" action="{{ url_for('demo') }}" enctype="multipart/form-data">
-
-        {% for image_missing_tags in images_missing_tags %}
-
-            <div class="form-group row">
-                <!-- <label for="{{ image_missing_tags.file_name }}" class="col-1 col-form-label">{{ image_missing_tags.file_name }}</label> -->
-                <div class="col-5">
-                    <input class="form-control" type="text" placeholder="Leave blank to discard image"
-                           id="{{ image_missing_tags.file_name }}" name="{{ image_missing_tags.file_name }}">
-                </div>
-                <div class="col-5">
-                    <!-- <input class="form-control" type="text" value="Artisanal kale" id="{{ image_missing_tags.file_name }}"> -->
-                    <img src="data:{{ image_missing_tags.type }};base64,{{ image_missing_tags.data }}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
-                </div>
-            </div>
-
-        {% endfor %}
+        <p>Sorry, we couldn't identify tags for the following images.</p>
+        <p>Please help by filling in one or more one-word descriptions for each image.</p>
 
         <br>
 
-        <button type="submit" value="Upload" form="input_form" class="btn btn-primary" multiple>Confirm Input Tags!</button>
-    </form>
+        <label for="exampleTags1" class="col-12 col-form-label"><p><strong>Example: </strong>Delimit descriptions by commas.</p></label>
+        <div class="col-5"><input class="form-control" type="text" name="exampleTags1" placeholder="cloud, sky, relaxing" readonly></div>
+
+        <label for="exampleTags2" class="col-12 col-form-label"><p><strong>Example: </strong>Leave blank to leave image out of article.</p></label>
+        <div class="col-5"><input class="form-control" type="text" name="exampleTags2" placeholder="" readonly></div>
+
+        <br>
+    </div>
+
+    <br>
+
+    <hr>
+
+    <h1 class="display-7">Enter tags below</h1>
+
+    <br>
+
+    {% if images_missing_tags %}
+
+        <form method="post" id="input_form" action="{{ url_for('demo') }}" enctype="multipart/form-data">
+
+            {% for image_missing_tags in images_missing_tags %}
+
+                <div class="form-group row">
+                    <!-- <label for="{{ image_missing_tags.file_name }}" class="col-1 col-form-label">{{ image_missing_tags.file_name }}</label> -->
+                    <div class="col-5">
+                        <input class="form-control" type="text" placeholder="Leave blank to discard image"
+                            id="{{ image_missing_tags.file_name }}" name="{{ image_missing_tags.file_name }}">
+                    </div>
+                    <div class="col-5">
+                        <!-- <input class="form-control" type="text" value="Artisanal kale" id="{{ image_missing_tags.file_name }}"> -->
+                        <img src="data:{{ image_missing_tags.type }};base64,{{ image_missing_tags.data }}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                    </div>
+                </div>
+
+            {% endfor %}
+
+            <br>
+
+            <button type="submit" value="Upload" form="input_form" class="btn btn-primary" multiple>Confirm Input Tags!</button>
+        </form>
+
+    {% endif %}
 
 {% endblock %}
