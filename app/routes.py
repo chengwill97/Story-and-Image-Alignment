@@ -18,6 +18,8 @@ from flask import url_for
 from flask import request
 from flask import session
 
+from magic import Magic
+
 from app import app
 
 from app.sandi.demo import SandiWorkflow
@@ -81,14 +83,21 @@ def images_missing_tags():
     except:
         return redirect(url_for('index'))
 
-    images_missing_tags = [json.loads(i) for i in request.args.getlist('images_missing_tags')]
+    file_names          = list()
+    images_missing_tags = list()
+    mime                = Magic(mime=True)
 
-    for image_missing_tags in images_missing_tags:
-        file_name = image_missing_tags['file_name']
+    file_names = request.args.getlist('images_missing_tags')
+
+    for file_name in file_names:
         file_path = os.path.join(folder, SandiWorkflow.IMAGES_FOLDER, file_name)
 
         with open(file_path, 'r') as image:
-            image_missing_tags['data'] = base64.b64encode(image.read()).decode('ascii')
+            images_missing_tags.append(
+                {'file_name'  : file_name,
+                 'data'       : base64.b64encode(image.read()).decode('ascii'),
+                 'type'       : mime.from_file(file_path)
+                })
 
     app.logger.debug('images_missing_tags')
 
