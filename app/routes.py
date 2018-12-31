@@ -122,7 +122,7 @@ def demo():
     folder         = session.pop('folder', None)
     num_images     = session.pop('num_images', 0)
     num_texts      = session.pop('num_texts', 0)
-    include_quotes = session.pop('include_quotes', False)
+    include_quotes = session.pop('include_quotes', 'include_quotes' in request.form)
 
     if request.method == 'GET':
         return render_template('demo.html', num_images=0, num_texts=0,
@@ -145,17 +145,16 @@ def demo():
         num_images = demo.collect_uploaded_images(request.files.getlist('images'))
         num_texts  = demo.collect_uploaded_texts(request.files.getlist('texts'))
 
-        session['include_quotes'] = 'include_quotes' in request.form
-
         # Get tags from yolo and caffe
         images_missing_tags = demo.run_tags()
 
         if images_missing_tags:
             app.logger.info('Could not retrieve tags for some images')
 
-            session['folder']     = demo.folder
-            session['num_images'] = num_images
-            session['num_texts']  = num_texts
+            session['folder']         = demo.folder
+            session['num_images']     = num_images
+            session['num_texts']      = num_texts
+            session['include_quotes'] = 'include_quotes' in request.form
 
             return redirect(url_for('images_missing_tags',
                                     images_missing_tags=images_missing_tags))
@@ -168,9 +167,9 @@ def demo():
 
     demo.run_alignment()
 
-    if include_quotes:
-        app.logger.info('Include quotes session flag found')
+    app.logger.info('Include quotes: {include_quotes}'.format(include_quotes=include_quotes))
 
+    if include_quotes:
         # Get reccomended quotes
         quotes = demo.get_quotes()
 
