@@ -117,10 +117,12 @@ class SandiWorkflow:
                 # except KeyError:
                 #     pass
 
+                union_tags = [tag.strip().replace(' ', '_') for tag in union_tags]
+
                 tags = SandiWorkflow.TAGS_DELIM.join(union_tags) or SandiWorkflow.TAGS_DELIM
 
-                f.write('{file_name}\t{union_tags}\n'
-                        .format(file_name=file_name, union_tags=tags))
+                f.write('{file_name}\t{tags}\n'
+                        .format(file_name=file_name, tags=tags))
 
                 """Add file name and image data
                 to list of images with missing tags
@@ -401,11 +403,11 @@ class SandiWorkflow:
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
             for line in f:
                 line_split = line.split('\t')
-                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(',')])
+                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(SandiWorkflow.TAGS_DELIM)])
                 image_name = line_split.pop()
 
                 try:
-                    uploaded_tags = filter(None, [tag.strip() for tag in user_tags[image_name].split(',')])
+                    uploaded_tags = filter(None, [tag.strip().replace(' ', '_') for tag in user_tags[image_name].split(SandiWorkflow.TAGS_DELIM)])
                 except:
                     pass
 
