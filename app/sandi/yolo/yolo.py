@@ -10,7 +10,7 @@ class Yolo:
         None
     """
     MODEL  = os.environ['YOLO_MODEL_NAME']
-    THRESH = os.environ['YOLO_THRESH']
+    THRESH = float(os.environ['YOLO_THRESH'])
 
     def __init__(self, model):
         """Initializes model
