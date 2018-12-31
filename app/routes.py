@@ -69,21 +69,27 @@ def index():
 
     return render_template('homepage.html')
 
-@app.route('/demo/imagesMissingTags')
+@app.route('/demo/imagesMissingTags', methods=['GET', 'POST'])
 def images_missing_tags():
     """Requests tags for images without tags
 
     Returns:
         template: template to get more tags
     """
+
+    folder              = None
+    file_names          = list()
+    images_missing_tags = list()
+    mime                = Magic(mime=True)
+
+    if request.method == 'GET':
+        return render_template('images_missing_tags.html',
+                        images_missing_tags=images_missing_tags)
+
     try:
         folder = session['folder']
     except:
         return redirect(url_for('index'))
-
-    file_names          = list()
-    images_missing_tags = list()
-    mime                = Magic(mime=True)
 
     file_names = request.args.getlist('images_missing_tags')
 
