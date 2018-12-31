@@ -64,10 +64,8 @@ def index():
 
     app.logger.info('Starting new session')
 
-    # Reset session
-    session.pop('folder', None)
-    session.pop('num_images', 0)
-    session.pop('num_texts', 0)
+    # Start new session by clearing previous session variables
+    session.clear()
 
     return render_template('homepage.html')
 
@@ -114,11 +112,12 @@ def demo():
     """
     app.logger.info('Handling Demo Request')
 
-    results    = list()
-    quotes     = None
-    folder     = session.pop('folder', None)
-    num_images = session.pop('num_images', 0)
-    num_texts  = session.pop('num_texts', 0)
+    results        = list()
+    quotes         = None
+    folder         = session.pop('folder', None)
+    num_images     = session.pop('num_images', 0)
+    num_texts      = session.pop('num_texts', 0)
+    include_quotes = session.pop('include_quotes', False)
 
     # Initialize workflow for SANDI demo
     demo = SandiWorkflow(folder=folder,
@@ -136,6 +135,8 @@ def demo():
         # Gather and save images and text files
         num_images = demo.collect_uploaded_images(request.files.getlist('images'))
         num_texts  = demo.collect_uploaded_texts(request.files.getlist('texts'))
+
+        session['include_quotes'] = 'include_quotes' in request.form
 
         # Get tags from yolo and caffe
         images_missing_tags = demo.run_tags()
@@ -158,7 +159,9 @@ def demo():
 
     demo.run_alignment()
 
-    if 'include_quotes' in request.form:
+    if include_quotes:
+        app.logger.info('Include quotes session flag found')
+
         # Get reccomended quotes
         quotes = demo.get_quotes()
 
@@ -172,6 +175,10 @@ def demo():
         app.logger.warn(e)
         traceback.print_exc()
         results = demo.get_randomized_alignments(quotes=quotes)
+
+    app.logger.info('Clearing old session')
+
+    session.clear()
 
     app.logger.info('Handled Demo Request')
 
