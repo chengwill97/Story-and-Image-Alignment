@@ -78,13 +78,6 @@ class SandiWorkflow:
 
         app.logger.info('Finished initiating SANDI pipeline')
 
-    def run(self):
-        """Get tags from images and runs the sandi
-        image alignment server application
-        """
-        self.run_tags()
-        self.run_alignment()
-
     def run_tags(self):
         """Runs the Yolo and Scene detection applications
         and saves the results to run image to text optimization
@@ -133,15 +126,7 @@ class SandiWorkflow:
                 to list of images with missing tags
                 """
                 if not union_tags:
-                    file_path = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
-
-                    with open(file_path, 'r') as image:
-                        image_missing_tags = {'file_name'   : file_name,
-                                            #   'data'        : base64.b64encode(image.read()).decode('ascii'),
-                                              'type'        : self.mime.from_file(file_path),
-                                           }
-
-                        images_missing_tags.append(json.dumps(image_missing_tags))
+                    images_missing_tags.append(file_name)
 
         app.logger.info('Finished retrieving tags from images with {num_missing} images missing tags'
                         .format(num_missing=len(images_missing_tags)))
