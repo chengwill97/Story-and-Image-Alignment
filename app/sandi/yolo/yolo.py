@@ -9,8 +9,8 @@ class Yolo:
     Returns:
         None
     """
-    YOLO_MODEL = os.environ['YOLO_MODEL_NAME']
-    THRESH     = 0.9
+    MODEL  = os.environ['YOLO_MODEL_NAME']
+    THRESH = os.environ['YOLO_THRESH']
 
     def __init__(self, model):
         """Initializes model
@@ -69,4 +69,4 @@ class Yolo:
         """
         app.logger.debug('Loading yolo model')
 
-        return lightnet.load(Yolo.YOLO_MODEL)
+        return lightnet.load(Yolo.MODEL)
