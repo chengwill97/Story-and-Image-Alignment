@@ -107,7 +107,7 @@ def images_missing_tags():
     return render_template('images_missing_tags.html',
                             images_missing_tags=images_missing_tags)
 
-@app.route('/demo', methods=['GET', 'POST'])
+@app.route('/demo/results', methods=['GET', 'POST'])
 def demo():
     """Page with results of sandi demo
 
