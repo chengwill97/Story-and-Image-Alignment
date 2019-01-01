@@ -7,6 +7,7 @@
 
     <form method="post" id="input_form" action="{{ url_for('demo') }}" enctype="multipart/form-data">
 
+        <!-- Input form for images -->
         <div class="input-group mb-3">
             <div class="input-group-prepend">
                 <span class="input-group-text">Images</span>
@@ -17,6 +18,13 @@
             </div>
         </div>
 
+        <!-- Display image names -->
+        <div class="scrollContainer">
+            <ul class="list-group imageNameScroll" id="imageNames">
+            </ul>
+        </div>
+
+        <!-- Input form for text -->
         <div class="input-group mb-3">
             <div class="input-group-prepend">
                 <span class="input-group-text">Text</span>
@@ -27,6 +35,7 @@
             </div>
         </div>
 
+        <!-- Check box to include quotes -->
         <div class="form-check">
             <input type="checkbox" class="form-check-input" id="include_quotes" name="include_quotes">
             <label class="form-check-label" for="include_quotes">Include Captions</label>
@@ -34,11 +43,13 @@
 
         <br>
 
+        <!-- Submit button -->
         <button type="submit" value="Upload" form="input_form" class="btn btn-primary" id="show" multiple>Make my post!</button>
     </form>
 
     <br>
 
+    <!-- Loading Screen -->
     <div class="loading">
         <img id="loadinggif" src="{{url_for('static', filename='img/shuffle.gif')}}" alt="Cool Loading Gif">
         <h4 id="loadingtext" class="display-8">Creating Your Story</h4>
