@@ -54,8 +54,13 @@
 
             <br>
 
-            <button type="submit" value="Upload" form="input_form" class="btn btn-primary" multiple>Confirm Input Tags!</button>
+            <button type="submit" value="Upload" form="input_form" class="btn btn-primary" id="show" multiple>Confirm Input Tags!</button>
         </form>
+
+        <div class="loading">
+            <img id="loadinggif" src="{{url_for('static', filename='img/shuffle.gif')}}" alt="Cool Loading Gif">
+            <h4 id="loadingtext" class="display-8">Creating Your Story</h4>
+        </div>
 
     {% endif %}
 
