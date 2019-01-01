@@ -1,10 +1,9 @@
-.imageNameScroll {
-    display: None;
-    height: 200px;
-    overflow-y: scroll;
-  }
-
 .scrollContainer {
-  /* margin-top: -16px; */
   margin-bottom: 16px;
+}
+
+.imageNameScroll, .textNameScroll {
+  display: None;
+  max-height: 150px;
+  overflow-y: scroll;
 }
