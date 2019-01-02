@@ -145,17 +145,6 @@ def demo():
         num_images = demo.collect_uploaded_images(request.files.getlist('images'))
         num_texts  = demo.collect_uploaded_texts(request.files.getlist('texts'))
 
-        # Retrieve the number of images to include in the alignment
-        request_num_images = int(request.form.get('include_num_images', num_images))
-
-        num_images = min(request_num_images, num_images)
-        demo.num_images = num_images
-
-        app.logger.debug('User requests to have {request_num_images} images, \
-                          and application set to have {num_images} images'
-                         .format(request_num_images=request_num_images,
-                                 num_images=num_images))
-
         # Get tags from yolo and caffe
         images_missing_tags = demo.run_tags()
 
