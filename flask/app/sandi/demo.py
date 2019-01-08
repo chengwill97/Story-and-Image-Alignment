@@ -17,6 +17,7 @@ from app import app
 from app.sandi.yolo.yolo                import Yolo
 from app.sandi.quotes.quote_rec         import Quotes
 from app.sandi.glove.glove              import GloveVectors
+from app.sandi.google.images            import ImageSearch
 
 class SandiWorkflow:
     """Runs the YOLOV2, Scene Detection,
@@ -62,6 +63,7 @@ class SandiWorkflow:
         # self.scene              = SceneDetection(self.scene_resources)
         self.quote              = Quotes(self.quote_resources)
         self.glove              = GloveVectors(self.glove_resources)
+        self.google_images      = ImageSearch()
         self.mime               = Magic(mime=True)
 
         app.logger.info('Initiating SANDI pipeline')
@@ -99,6 +101,11 @@ class SandiWorkflow:
         # scene_detection_tags = self.scene.run(self.image_names,
         #                                       os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
+        google_image_tags = self.google_images
+                                .run(self.image_names,
+                                     os.path.join(self.folder,
+                                     SandiWorkflow.IMAGES_FOLDER))
+
         app.logger.debug('Saving tags to: %s', self.folder)
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
@@ -116,6 +123,11 @@ class SandiWorkflow:
                 #     union_tags.update(scene_detection_tags[file_name])
                 # except KeyError:
                 #     pass
+
+                try:
+                    union_tags.update(google_tags[file_name])
+                except KeyError:
+                    pass
 
                 union_tags = [tag.strip().replace(' ', '_') for tag in union_tags]
 
