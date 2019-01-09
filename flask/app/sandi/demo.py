@@ -101,10 +101,8 @@ class SandiWorkflow:
         # scene_detection_tags = self.scene.run(self.image_names,
         #                                       os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        google_image_tags = self.google_images
-                                .run(self.image_names,
-                                     os.path.join(self.folder,
-                                     SandiWorkflow.IMAGES_FOLDER))
+        google_tags = self.google_images.run(self.image_names,
+                                                   os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         app.logger.debug('Saving tags to: %s', self.folder)
 
@@ -268,7 +266,7 @@ class SandiWorkflow:
 
             if i in alignments:
 
-                app.logger.debug('Appending quote to paragraph {}'.format(i))
+                app.logger.debug('Appending {image} to paragraph {para}'.format(image=alignments[i], para=i))
 
                 file_name   = alignments[i]
                 file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
