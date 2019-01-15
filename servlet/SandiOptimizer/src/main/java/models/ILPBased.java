@@ -71,7 +71,7 @@ public class ILPBased {
 			model.reset();
 		
 			GRBLinExpr expr = new GRBLinExpr();
-			GRBVar[][] X = new GRBVar[numImages][numParas];
+			GRBVar[][] X = new GRBVar[imageName_tags.size()][numParas];
 			
 			//-------------------------------------------------------------------------------------------------------------------
 			
