@@ -3,6 +3,10 @@ package com.github.SandiInteractiveDemo;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.naming.Context;
@@ -14,7 +18,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import gurobi.GRBException;
 import models.ILPBased;
+import models.ModelUtils;
+import utils.ExtractPhrases;
 
 /**
  * Servlet implementation class SandiServlet
@@ -94,7 +101,26 @@ public class SandiServlet extends HttpServlet {
               LOGGER.info("Start alignment");
 
               /* TODO: Start alignment here */
+              
+              ExtractPhrases phrases = new ExtractPhrases();
+              String articleText = work_dir + "/paragraph.txt";
+              
+              Map<Integer, List<String>> para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
 
+              Map<String, Set<String>> imageName_tags = new HashMap<>();
+              
+              imageName_tags = ModelUtils.readImageTags(work_dir);
+              
+              int numParas = para_distinctiveConcepts.keySet().size();
+              
+              LOGGER.info("Alignments in progress...");
+              
+              try {
+				ILPBased.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
+				} catch (GRBException e) {
+					e.printStackTrace();
+				}
+              
               LOGGER.info("Finished alignment");
 
               response.setContentType("application/json");
