@@ -58,11 +58,9 @@
 		<version>3.9.2</version>
 	</dependency>
 	<dependency>
-	    <groupId>utils</groupId>
+	    <groupId>com.github.SandiOptimizer</groupId>
 	    <artifactId>util</artifactId>
 	    <version>1.0</version>
-	    <scope>system</scope>
-	    <systemPath>${project.basedir}/src/main/resources/utils.jar</systemPath>
 	</dependency>
   </dependencies>
   <build>
