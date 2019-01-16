@@ -7,6 +7,9 @@ $(function() {
             $('.imageNameScroll').show();
         }
 
+        // Change value of num images
+        $('input[name=include_num_images]').val(this.files.length.toString());
+
         $('#imageNames').html('');
 
         $('#imageNames').append('<li class="list-group-item active d-flex justify-content-between align-items-center"> Images Uploaded <span class="badge badge-secondary badge-pill">'
