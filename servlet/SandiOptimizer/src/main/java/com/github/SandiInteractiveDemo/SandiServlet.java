@@ -34,6 +34,8 @@ public class SandiServlet extends HttpServlet {
 	private ILPBased ilp = null;
 	
 	private String model_path = null;
+	
+	private String postagger_path = null;
       
     public SandiServlet() {
         super();
@@ -44,7 +46,10 @@ public class SandiServlet extends HttpServlet {
     	LOGGER.info("Loading Word2Vec Model");
     	try {
             Context init_context = new InitialContext();
+            
             model_path = (String) init_context.lookup("java:comp/env/model_path");
+            
+            postagger_path = (String) init_context.lookup("java:comp/env/postagger_path");
             
             LOGGER.info("Loading model from path " + model_path);
             
@@ -54,7 +59,7 @@ public class SandiServlet extends HttpServlet {
 		} 
     	catch (NamingException e) {
 			e.printStackTrace();
-		}
+		}	
     	
     	LOGGER.info("Finished Loading Word2Vec Model");
 	}
@@ -63,7 +68,6 @@ public class SandiServlet extends HttpServlet {
 		PrintWriter writer;
         String err = "";
         String work_dir = "";
-        String path_to_alignment = "";
 
         int num_images;
         
@@ -99,24 +103,24 @@ public class SandiServlet extends HttpServlet {
               LOGGER.info(String.format("Parameters - work_dir: %s, num_images: %d", work_dir, num_images));
 
               LOGGER.info("Start alignment");
-
-              /* TODO: Start alignment here */
               
-              ExtractPhrases phrases = new ExtractPhrases();
+              ExtractPhrases phrases = new ExtractPhrases(postagger_path);
               String articleText = work_dir + "/paragraph.txt";
               
               Map<Integer, List<String>> para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
-
+              
               Map<String, Set<String>> imageName_tags = new HashMap<>();
+              
+              LOGGER.info(String.format("Starting Reading image tags from %s", work_dir));
               
               imageName_tags = ModelUtils.readImageTags(work_dir);
               
-              int numParas = para_distinctiveConcepts.keySet().size();
+//              int numParas = para_distinctiveConcepts.keySet().size();
               
               LOGGER.info("Alignments in progress...");
               
               try {
-				ILPBased.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
+            	  ilp.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
 				} catch (GRBException e) {
 					e.printStackTrace();
 				}
@@ -124,9 +128,8 @@ public class SandiServlet extends HttpServlet {
               LOGGER.info("Finished alignment");
 
               response.setContentType("application/json");
-              writer = response.getWriter();
-              writer.write(String.format("{\"aligned\": \"%s\"}", path_to_alignment));
-              writer.close();
+//              writer = response.getWriter();
+//              writer.close();
   
               LOGGER.info("Finished GET Request to Sandi Alignment server");
 
