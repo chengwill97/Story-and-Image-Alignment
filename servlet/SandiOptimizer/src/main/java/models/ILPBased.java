@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.embeddings.wordvectors.WordVectors;
@@ -28,6 +29,8 @@ import utils.GenericUtils;
 
 public class ILPBased {
 	
+	private final static Logger LOGGER = Logger.getLogger(ILPBased.class.getName());
+	
 	public static WordVectors w2v = null;
 	public static Set<String> stopWords = new HashSet<>();
 	public static ExtractPhrases phrases = null;
@@ -36,7 +39,7 @@ public class ILPBased {
 	
 	public ILPBased(String pathToW2V) throws IOException{
 		
-		System.out.println("Loading vectors....patience!!"); // takes up a lot of memory
+		LOGGER.info("Loading vectors....patience!!"); // takes up a lot of memory
 		
 		// load word vectors
 //		File googleModel = new File(pathToW2V);
@@ -46,10 +49,12 @@ public class ILPBased {
 		File gloveModel = new File(pathToW2V);
 		w2v = WordVectorSerializer.readWord2VecModel(gloveModel);
 		
-		System.out.println("Done loading vectors!");		
+		LOGGER.info("Done loading vectors!");		
 	}
 	
-	public static void align(Map<String, Set<String>> imageName_tags, Map<Integer, List<String>> para_distinctiveConcepts, int numImages, String input_folder) throws GRBException, FileNotFoundException{
+	public void align(Map<String, Set<String>> imageName_tags, Map<Integer, List<String>> para_distinctiveConcepts, int numImages, String input_folder) throws GRBException, FileNotFoundException{
+		
+		LOGGER.info("Starting alignments");
 		
 		PrintWriter out = new PrintWriter(new FileOutputStream(new File(input_folder + "/alignments.txt")));
 
@@ -220,6 +225,8 @@ public class ILPBased {
 		}catch(GRBException e){
 			System.out.println("Error code: " + e.getErrorCode() + ". " + e.getMessage());
 		}
+		
+		LOGGER.info("Finished alignments");
 	}
 	
 //	public static void main(String[] args) throws GRBException, IOException {
