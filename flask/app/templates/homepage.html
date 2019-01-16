@@ -41,10 +41,31 @@
             </ul>
         </div>
 
+        <br>
+
         <!-- Check box to include quotes -->
-        <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="include_quotes" name="include_quotes">
-            <label class="form-check-label" for="include_quotes">Include Captions</label>
+        <div class="form-group row">
+            <div class="col-sm-3">Include Image Captions</div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include_quotes" name="include_quotes">
+                    <label class="form-check-label" for="include_quotes">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check box to indicate number of images to use -->
+        <div class="form-group row align-items-center">
+            <label for="include_num_images" class="col-sm-3 col-form-label">Number of Images to Include</label>
+            <div class="col-sm-2">
+                <input class="form-control form-control-sm" type="number" value="" min="0" max="9001" step="1"
+                    placeholder="All images" id="include_num_images" name="include_num_images">
+            </div>
+            <div class="col-sm-12">
+                <small id="numberImages" class="form-text text-muted">Leave blank to automatically use up to all images</small>
+            </div>
         </div>
 
         <br>
