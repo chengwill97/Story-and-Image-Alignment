@@ -8,19 +8,24 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import util.FileLines;
 
 public class ModelUtils{
 	
-	public static Set<String> imageNames = new HashSet<>(); // set of images for the article
+	private final static Logger LOGGER = Logger.getLogger(ModelUtils.class.getName());
 	
 	public static Map<String, Set<String>> readImageTags(String input_folder) throws FileNotFoundException, UnsupportedEncodingException {
 		/*
 		 *  read all image tags into a set
 		 *  image tags include: objects, scenes, CSK concepts
 		 */
-		imageNames.clear();
+		
+		LOGGER.info("Reading image tags");
+		
+		Set<String> imageNames = new HashSet<>(); // set of images for the article
+		
 		Map<String, Set<String>> imgTags = new HashMap<>(); // set of all image tags for each image in the article
 	
 		for(File file: new File(input_folder + "/images/").listFiles()){
@@ -46,6 +51,8 @@ public class ModelUtils{
 			Set<String> tags = new HashSet<String>(Arrays.asList(line.split("\t")[1].split(", ")));
 			imgTags.put(imageName, tags);
 		}
+		
+		LOGGER.info("Finished reading all image tags");
 		
 		return imgTags;
 	}
