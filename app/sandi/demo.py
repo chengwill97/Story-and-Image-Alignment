@@ -17,7 +17,6 @@ from app import app
 from app.sandi.yolo.yolo                import Yolo
 from app.sandi.quotes.quote_rec         import Quotes
 from app.sandi.glove.glove              import GloveVectors
-from app.sandi.google.images            import ImageSearch
 
 class SandiWorkflow:
     """Runs the YOLOV2, Scene Detection,
@@ -63,7 +62,6 @@ class SandiWorkflow:
         # self.scene              = SceneDetection(self.scene_resources)
         self.quote              = Quotes(self.quote_resources)
         self.glove              = GloveVectors(self.glove_resources)
-        self.google_images      = ImageSearch()
         self.mime               = Magic(mime=True)
 
         app.logger.info('Initiating SANDI pipeline')
@@ -101,9 +99,6 @@ class SandiWorkflow:
         # scene_detection_tags = self.scene.run(self.image_names,
         #                                       os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        google_tags = self.google_images.run(self.image_names,
-                                                   os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
-
         app.logger.debug('Saving tags to: %s', self.folder)
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
@@ -121,11 +116,6 @@ class SandiWorkflow:
                 #     union_tags.update(scene_detection_tags[file_name])
                 # except KeyError:
                 #     pass
-
-                try:
-                    union_tags.update(google_tags[file_name])
-                except KeyError:
-                    pass
 
                 union_tags = [tag.strip().replace(' ', '_') for tag in union_tags]
 
@@ -150,19 +140,30 @@ class SandiWorkflow:
         application
         """
 
-        app.logger.info("Getting optimized alignments")
+        # params = {'work_dir': self.folder, 'num_images': self.num_images}
 
-        params = {'work_dir': self.folder, 'num_images': self.num_images}
+        # try:
+        #     response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
+        #     data         = response.json()
+        #     self.aligned = data['aligned']
+        # except Exception as e:
+        #     app.logger.exception(e)
 
-        app.logger.debug("Alignment parameters are; working directory: {work_dir}, number images {num_images}"
-                         .format(work_dir=self.folder, num_images=self.num_images))
+        pre_commands = 'export GUROBI_HOME="/home/willc97/dev/python2.7/gurobi810/linux64"; \
+                        export PATH="${PATH}:${GUROBI_HOME}/bin"; \
+                        export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"; \
+                        export GRB_LICENSE_FILE="${GUROBI_HOME}/gurobi.lic"; '
 
-        try:
-            response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
-        except Exception as e:
-            app.logger.exception(e)
-
-        app.logger.info("Finished getting optimized alignments")
+        command = '{command} {flags} {jar} \
+                    {data_folder} {num_images} {model_folder}'.format(
+                        command='java',
+                        flags='-jar',
+                        jar='/home/willc97/dev/python2.7/SANDI/SANDI_main.jar',
+                        data_folder=os.path.abspath(self.folder),
+                        num_images=min(self.num_images, self.num_texts),
+                        model_folder='/home/willc97/dev/python2.7/SANDI/')
+        app.logger.debug('Executing: \n {command}'.format(command=command))
+        os.system(command)
 
     def get_optimized_alignments(self, quotes=None):
         """Get alignment from 'path/to/alignments.txt'
@@ -255,7 +256,7 @@ class SandiWorkflow:
 
             if i in alignments:
 
-                app.logger.debug('Appending {image} to paragraph {para}'.format(image=alignments[i], para=i))
+                app.logger.debug('Appending quote to paragraph {}'.format(i))
 
                 file_name   = alignments[i]
                 file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)

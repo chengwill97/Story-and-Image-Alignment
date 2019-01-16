@@ -2,8 +2,7 @@ asn1crypto==0.24.0
 backports-abc==0.5
 backports.functools-lru-cache==1.5
 backports.shutil-get-terminal-size==1.0.0
-beautifulsoup4==4.6.3
-certifi==2018.11.29
+certifi==2018.10.15
 cffi==1.11.5
 chardet==3.0.4
 Click==7.0
@@ -51,7 +50,6 @@ prompt-toolkit==1.0.15
 protobuf==3.1.0.post1
 ptyprocess==0.6.0
 pycparser==2.19
-pycurl==7.43.0.2
 Pygments==2.2.0
 pyOpenSSL==18.0.0
 pyparsing==2.3.0
@@ -59,7 +57,6 @@ PySocks==1.6.8
 python-dateutil==2.7.5
 python-dotenv==0.9.1
 python-gflags==3.1.2
-python-magic==0.4.15
 pytz==2018.7
 PyWavelets==1.0.1
 PyYAML==3.13
