@@ -16,8 +16,9 @@ public class ExtractPhrases {
 	public static MaxentTagger tagger = new MaxentTagger(); // Standford POS Tagger requirement
 	public static String next="";
 	
-	public ExtractPhrases(){
-		tagger = new MaxentTagger("./resources/stanford-postagger-full-2017-06-09/models/english-bidirectional-distsim.tagger");
+	public ExtractPhrases(String postagger) {
+		
+		tagger = new MaxentTagger(postagger);
 	}
 	
 	public static Set<String> returnNounPhrases(String text){
@@ -91,7 +92,7 @@ public class ExtractPhrases {
 			int paraNum = Integer.parseInt(line.split("\t")[0]);
 			String para = line.split("\t")[1];
 			
-			System.out.println(returnNounPhrases(para));
+//			System.out.println(returnNounPhrases(para));
 			
 			List<String> phrases = new ArrayList<String>(returnNounPhrases(para));
 			para_distinctivePhrases.put(paraNum, phrases);
