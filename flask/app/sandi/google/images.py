@@ -6,6 +6,9 @@ import pycurl
 from bs4 import BeautifulSoup
 from StringIO import StringIO
 
+from multiprocessing.dummy import Pool as ThreadPool
+
+
 class ImageSearch:
     """Finds image descriptions from
     Google Reverse Image Search
@@ -18,27 +21,26 @@ class ImageSearch:
     USER_AGENT          = os.environ['USER_AGENT']
 
     def __init__(self):
-        pass
+        self.images_dir  = None
+        self.google_tags = None
 
     def run(self, file_names, images_dir):
 
         app.logger.info('Starting Google Reverse Image Search analysis')
 
-        google_tags = dict()
+        self.images_dir  = images_dir
+        self.google_tags = dict()
 
-        for file_name in file_names:
-
-            image_path = os.path.join(images_dir, file_name)
-
-            google_tags[file_name] = set(self.search_image(image_path))
-
-            app.logger.debug('Google tags {file_name}: {results}'.format(file_name=file_name, results=google_tags[file_name]))
+        pool = ThreadPool(8)
+        pool.map(self.search_image, file_names)
+        pool.close()
+        pool.join()
 
         app.logger.info('Finished Google Reverse Image Search analysis')
 
-        return google_tags
+        return self.google_tags
 
-    def search_image(self, image_path):
+    def search_image(self, file_name):
         """Search tags with Google Reverse Image Search
 
         Send image to Google Reverse Image Search.
@@ -53,7 +55,9 @@ class ImageSearch:
             list: tags for image
         """
 
-        app.logger.info('Getting Google Tags for image {image_path}'.format(image_path=image_path))
+        app.logger.info('Getting Google Tags for image {file_name}'.format(file_name=file_name))
+
+        image_path = os.path.join(self.images_dir, file_name)
 
         tags = list()
 
@@ -102,6 +106,8 @@ class ImageSearch:
             finally:
                 conn.close()
 
+        self.google_tags[file_name] = set(tags)
+
         app.logger.info('Received Google Tags: {tags}'.format(tags=tags))
 
-        return tags
+        return
