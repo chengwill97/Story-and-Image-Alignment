@@ -62,6 +62,11 @@
 	    <artifactId>util</artifactId>
 	    <version>1.0</version>
 	</dependency>
+	<dependency>
+	    <groupId>com.github.SandiOptimizer</groupId>
+	    <artifactId>gurobi</artifactId>
+	    <version>7.0.2</version>
+	</dependency>
   </dependencies>
   <build>
     <finalName>SandiOptimizer</finalName>

@@ -6,6 +6,14 @@ mvn install:install-file \
    -Dpackaging=jar \
    -DgeneratePom=true
 
+mvn install:install-file \
+   -Dfile=./src/main/resources/gurobi.jar \
+   -DgroupId=com.github.SandiOptimizer \
+   -DartifactId=gurobi \
+   -Dversion=7.0.2 \
+   -Dpackaging=jar \
+   -DgeneratePom=true
+
 # Where each refers to:
 
 # < path-to-file >: the path to the file to load e.g -> c:\kaptcha-2.3.jar
