@@ -150,30 +150,19 @@ class SandiWorkflow:
         application
         """
 
-        # params = {'work_dir': self.folder, 'num_images': self.num_images}
+        app.logger.info("Getting optimized alignments")
 
-        # try:
-        #     response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
-        #     data         = response.json()
-        #     self.aligned = data['aligned']
-        # except Exception as e:
-        #     app.logger.exception(e)
+        params = {'work_dir': self.folder, 'num_images': self.num_images}
 
-        pre_commands = 'export GUROBI_HOME="/home/willc97/dev/python2.7/gurobi810/linux64"; \
-                        export PATH="${PATH}:${GUROBI_HOME}/bin"; \
-                        export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"; \
-                        export GRB_LICENSE_FILE="${GUROBI_HOME}/gurobi.lic"; '
+        app.logger.debug("Alignment parameters are; working directory: {work_dir}, number images {num_images}"
+                         .format(work_dir=self.folder, num_images=self.num_images))
 
-        command = '{command} {flags} {jar} \
-                    {data_folder} {num_images} {model_folder}'.format(
-                        command='java',
-                        flags='-jar',
-                        jar='/home/willc97/dev/python2.7/SANDI/SANDI_main.jar',
-                        data_folder=os.path.abspath(self.folder),
-                        num_images=min(self.num_images, self.num_texts),
-                        model_folder='/home/willc97/dev/python2.7/SANDI/')
-        app.logger.debug('Executing: \n {command}'.format(command=command))
-        os.system(command)
+        try:
+            response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
+        except Exception as e:
+            app.logger.exception(e)
+
+        app.logger.info("Finished getting optimized alignments")
 
     def get_optimized_alignments(self, quotes=None):
         """Get alignment from 'path/to/alignments.txt'
