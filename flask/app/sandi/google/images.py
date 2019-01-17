@@ -31,7 +31,7 @@ class ImageSearch:
         self.images_dir  = images_dir
         self.google_tags = dict()
 
-        pool = ThreadPool(8)
+        pool = ThreadPool(min(16, len(file_names)))
         pool.map(self.search_image, file_names)
         pool.close()
         pool.join()
