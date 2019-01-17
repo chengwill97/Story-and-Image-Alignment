@@ -6,6 +6,8 @@ import random
 import base64
 import requests
 
+from multiprocessing.pool import ThreadPool
+
 from magic import Magic
 import lightnet
 
@@ -95,14 +97,21 @@ class SandiWorkflow:
 
         images_missing_tags = list()
 
-        # Obtain tags from the yolo and scene detection models
-        yolo_tags = self.yolo.run(self.image_names,
-                                  os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
-        # scene_detection_tags = self.scene.run(self.image_names,
-        #                                       os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        args_tags = (self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        google_tags = self.google_images.run(self.image_names,
-                                                   os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        pool = ThreadPool(2)
+
+        # Obtain tags from the yolo and scene detection models
+        yolo_thread   = pool.apply_async(self.yolo.run, args_tags)
+        google_thread = pool.apply_async(self.google_images.run, args_tags)
+        # scene_detection_thread = pool.apply_async(self.scene.run, args_tags)
+
+        yolo_tags   = yolo_thread.get()
+        google_tags = google_thread.get()
+        # scene_detection_tags = self.scene.run(*args_tags)
+
+        pool.close()
+        pool.join()
 
         app.logger.debug('Saving tags to: %s', self.folder)
 
