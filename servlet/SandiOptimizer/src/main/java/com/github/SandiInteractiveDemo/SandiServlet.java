@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import gurobi.GRBException;
+import models.Analysis;
 import models.ILPBased;
 import models.ModelUtils;
 import utils.ExtractPhrases;
@@ -65,11 +66,21 @@ public class SandiServlet extends HttpServlet {
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		PrintWriter writer;
-        String err = "";
-        String work_dir = "";
-
-        int num_images;
+		
+		
+		ExtractPhrases phrases;
+		String         articleText;
+		String         err;
+		String         work_dir;
+		int            num_images;
+		Analysis       analysis;
+		PrintWriter    writer;
+		
+        Map<Integer, List<String>> 			para_distinctiveConcepts;
+        Map<String, Set<String>> 			imageName_tags;
+        Map<Integer, String> 				alignedParaNum_imageName;
+        Map<String, Map<Integer, Double>> 	image_para_cosine;
+        Map<String, List<String>> 			image_topkParaConcepts;
         
         LOGGER.info("Received GET Request to Sandi Alignment server");
 
@@ -104,12 +115,10 @@ public class SandiServlet extends HttpServlet {
 
               LOGGER.info("Start alignment");
               
-              ExtractPhrases phrases = new ExtractPhrases(postagger_path);
-              String articleText = work_dir + "/paragraph.txt";
-              
-              Map<Integer, List<String>> para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
-              
-              Map<String, Set<String>> imageName_tags = new HashMap<>();
+              phrases = new ExtractPhrases(postagger_path);
+              articleText = work_dir + "/paragraph.txt";
+              analysis = new Analysis();
+              para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
               
               LOGGER.info(String.format("Starting Reading image tags from %s", work_dir));
               
@@ -120,7 +129,16 @@ public class SandiServlet extends HttpServlet {
               LOGGER.info("Alignments in progress...");
               
               try {
-            	  ilp.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
+            	  alignedParaNum_imageName = ilp.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
+            	  
+            	  image_para_cosine = analysis.sim_allImagesParas(alignedParaNum_imageName, imageName_tags, para_distinctiveConcepts);
+            	  
+            	  // TODO: write image_para_csoine to file
+            	  
+            	  image_topkParaConcepts = analysis.sim_imageAlignedPara(alignedParaNum_imageName, imageName_tags, para_distinctiveConcepts);
+            	  
+            	  // TODO: write image_topkParaConcepts to file
+            	  
 				} catch (GRBException e) {
 					e.printStackTrace();
 				}
