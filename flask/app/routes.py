@@ -209,3 +209,7 @@ def demo():
 
     return render_template('demo.html', num_images=num_images, num_texts=num_texts,
                             results=results)
+
+@app.route('/examples', methods=['GET', 'POST'])
+def examples():
+    return render_template('examples.html')

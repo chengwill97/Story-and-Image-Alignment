@@ -28,10 +28,23 @@
     <title>SANDI Demo</title>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-primary">
-        <a href="{{ url_for('index') }}" class="btn btn-primary" role="button">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a href="{{ url_for('index') }}" class="navbar-brand" role="button">
             <span class="navbar-brand mb-0 h1">Story and Image Alignment</span>
         </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('examples') }}">Examples</a>
+                </li>
+            </ul>
+        </div>
     </nav>
 
     <div class="container">
