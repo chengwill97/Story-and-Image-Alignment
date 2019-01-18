@@ -24,14 +24,14 @@
             </ul>
         </div>
 
-        <!-- Input form for text -->
+        <!-- Input form for text files -->
         <div class="input-group mb-3">
             <div class="input-group-prepend">
                 <span class="input-group-text">Text</span>
             </div>
             <div class="custom-file">
-                <input type="file" name="texts" class="custom-file-input" id="inputText" multiple>
-                <label class="custom-file-label" for="inputText">Choose text</label>
+                <input type="file" name="text_files" class="custom-file-input" id="text_files" multiple>
+                <label class="custom-file-label" for="text_files">Choose text</label>
             </div>
         </div>
 
@@ -39,6 +39,25 @@
         <div class="scrollContainer">
             <ul class="list-group textNameScroll" id="textNames">
             </ul>
+        </div>
+
+        <!-- Check box to use input text instead -->
+        <div class="form-group row">
+            <div class="col-sm-3">Input Text Instead of Text File</div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <input class="form-check-input" name="use_text" type="checkbox" id="use_text">
+                    <label class="form-check-label" for="use_text">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input form for text -->
+        <div class="form-group">
+            <!-- <label for="inputTextOnly">Input Text. Place new line in between each paragraph</label> -->
+            <textarea class="form-control" name="text" id="text" rows="5"></textarea>
         </div>
 
         <br>

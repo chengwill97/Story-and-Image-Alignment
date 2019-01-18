@@ -143,7 +143,10 @@ def demo():
 
         # Gather and save images and text files
         num_images = demo.collect_uploaded_images(request.files.getlist('images'))
-        num_texts  = demo.collect_uploaded_texts(request.files.getlist('texts'))
+        if 'use_text' in request.form:
+            num_texts = demo.collect_uploaded_text(request.form.get('text', ''))
+        else:
+            num_texts  = demo.collect_uploaded_text_files(request.files.getlist('text_files'))
 
         # Retrieve the number of images to include in the alignment
         try:
