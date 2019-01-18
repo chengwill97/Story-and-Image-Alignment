@@ -28,7 +28,7 @@ $(function() {
 });
 
 $(function() {
-    $('#inputText').change(function(){
+    $('#text_files').change(function(){
 
         if (this.files.length == 0) {
             $('.textNameScroll').hide();
