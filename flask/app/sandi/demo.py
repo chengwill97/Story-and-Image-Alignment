@@ -99,21 +99,23 @@ class SandiWorkflow:
 
         args_tags = (self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
-        pool = ThreadPool(2)
+        if self.num_images > 0:
 
-        # Obtain tags from the yolo and scene detection models
-        yolo_thread   = pool.apply_async(self.yolo.run, args_tags)
-        google_thread = pool.apply_async(self.google_images.run, args_tags)
-        # scene_detection_thread = pool.apply_async(self.scene.run, args_tags)
+            pool = ThreadPool(2)
 
-        yolo_tags   = yolo_thread.get()
-        google_tags = google_thread.get()
-        # scene_detection_tags = self.scene.run(*args_tags)
+            # Obtain tags from the yolo and scene detection models
+            yolo_thread   = pool.apply_async(self.yolo.run, args_tags)
+            google_thread = pool.apply_async(self.google_images.run, args_tags)
+            # scene_detection_thread = pool.apply_async(self.scene.run, args_tags)
 
-        pool.close()
-        pool.join()
+            yolo_tags   = yolo_thread.get()
+            google_tags = google_thread.get()
+            # scene_detection_tags = self.scene.run(*args_tags)
 
-        app.logger.debug('Saving tags to: %s', self.folder)
+            pool.close()
+            pool.join()
+
+            app.logger.debug('Saving tags to: %s', self.folder)
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
 
@@ -361,18 +363,34 @@ class SandiWorkflow:
 
         return self.num_images
 
-    def collect_uploaded_texts(self, uploaded_texts):
+    def collect_uploaded_text_files(self, uploaded_text_files):
         """Save texts from user to local filesystem
 
         Args:
-            uploaded_texts (list): list of flask text files
+            uploaded_text_files (list): list of flask text files
         """
-        app.logger.debug('Saving paragraphs')
+        app.logger.debug('Saving paragraphs from files')
 
         paragraphs = list()
 
-        for input_text in request.files.getlist('texts'):
+        for input_text in uploaded_text_files:
             paragraphs += input_text.read().decode('cp1252').split('\n')
+
+        self.num_texts = len(paragraphs)
+
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'w') as f:
+            for index, paragraph in enumerate(paragraphs):
+                f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
+
+        app.logger.info('Collected {num_texts} paragraphs'.format(num_texts=self.num_texts))
+
+        return self.num_texts
+
+    def collect_uploaded_text(self, uploaded_text):
+
+        app.logger.debug('Saving paragraphs from text input')
+
+        paragraphs = filter(None, uploaded_text.split('\n'))
 
         self.num_texts = len(paragraphs)
 
