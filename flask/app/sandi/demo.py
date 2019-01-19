@@ -95,6 +95,8 @@ class SandiWorkflow:
         """
         app.logger.info('Retrieving tags from images')
 
+        yolo_tags           = dict()
+        google_tags         = dict()
         images_missing_tags = list()
 
         args_tags = (self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
@@ -343,6 +345,39 @@ class SandiWorkflow:
 
         return top_quote
 
+    def get_cosine_similarities(self):
+        """Retrives the image to paragraph cosine
+        similarities outputted from the SANDI Servlet
+
+        Returns:
+            dict: map image-paragraph cosine similarities for each image
+        """
+
+        app.logger.info('Starting to retrieve cosine similarities between text and images')
+
+        cosine_similarities      = dict()
+        cosine_similarities_path = os.path.join(self.folder, 'cosine.txt')
+
+        try:
+            with open(cosine_similarities_path) as f:
+                cosine_similarities = json.load(f)
+
+            """
+            Converts each mapping of image name to dict
+            to a mapping of image name to list of cosine
+            similarities in paragraph index order
+            """
+            for image_name, para_cosine_map in cosine_similarities.items():
+                indices = sorted(para_cosine_map.keys(), key=lambda para: int(para))
+                cosine_similarities[image_name] = ['{0:.3f}'.format(para_cosine_map[indice]) for indice in indices]
+
+        except IOError as e:
+            app.logger.warn('Cosine similarities path DNE: {path}'.format(path=cosine_similarities_path))
+
+        app.logger.info('Finished retrieving cosine similarities between text and images')
+
+        return cosine_similarities
+
     def collect_uploaded_images(self, uploaded_images):
         """Save images from user to local filesystem
 
@@ -374,7 +409,7 @@ class SandiWorkflow:
         paragraphs = list()
 
         for input_text in uploaded_text_files:
-            paragraphs += input_text.read().decode('cp1252').split('\n')
+            paragraphs += input_text.read().decode('cp1252').splitlines()
 
         self.num_texts = len(paragraphs)
 
@@ -390,7 +425,9 @@ class SandiWorkflow:
 
         app.logger.debug('Saving paragraphs from text input')
 
-        paragraphs = filter(None, uploaded_text.split('\n'))
+        paragraphs = filter(None, uploaded_text.splitlines())
+
+        app.logger.debug(paragraphs)
 
         self.num_texts = len(paragraphs)
 

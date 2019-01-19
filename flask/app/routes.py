@@ -117,12 +117,13 @@ def demo():
     """
     app.logger.info('Handling Demo Request')
 
-    results        = list()
-    quotes         = None
-    folder         = session.pop('folder', None)
-    num_images     = session.pop('num_images', 0)
-    num_texts      = session.pop('num_texts', 0)
-    include_quotes = session.pop('include_quotes', 'include_quotes' in request.form)
+    results             = list()
+    cosine_similarities = dict()
+    quotes              = None
+    folder              = session.pop('folder', None)
+    num_images          = session.pop('num_images', 0)
+    num_texts           = session.pop('num_texts', 0)
+    include_quotes      = session.pop('include_quotes', 'include_quotes' in request.form)
 
     if request.method == 'GET':
         return render_template('demo.html', num_images=0, num_texts=0,
@@ -195,7 +196,8 @@ def demo():
     a randomized order of images and texts
     """
     try:
-        results = demo.get_optimized_alignments(quotes=quotes)
+        results             = demo.get_optimized_alignments(quotes=quotes)
+        cosine_similarities = demo.get_cosine_similarities()
     except Exception as e:
         app.logger.warn(e)
         traceback.print_exc()
@@ -208,4 +210,4 @@ def demo():
     app.logger.info('Handled Demo Request')
 
     return render_template('demo.html', num_images=num_images, num_texts=num_texts,
-                            results=results)
+                            results=results, cosine_similarities=cosine_similarities)
