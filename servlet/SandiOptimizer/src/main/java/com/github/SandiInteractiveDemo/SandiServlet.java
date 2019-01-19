@@ -1,8 +1,10 @@
 package com.github.SandiInteractiveDemo;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +20,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 import gurobi.GRBException;
+import models.Analysis;
 import models.ILPBased;
 import models.ModelUtils;
 import utils.ExtractPhrases;
@@ -31,11 +37,13 @@ public class SandiServlet extends HttpServlet {
 	
 	private final static Logger LOGGER = Logger.getLogger(SandiServlet.class.getName());
 	
-	private ILPBased ilp = null;
+	private ILPBased ilp;
 	
-	private String model_path = null;
+	private String model_path;
 	
-	private String postagger_path = null;
+	private String postagger_path;
+	
+	private Gson gson;
       
     public SandiServlet() {
         super();
@@ -59,17 +67,32 @@ public class SandiServlet extends HttpServlet {
 		} 
     	catch (NamingException e) {
 			e.printStackTrace();
-		}	
+		}
+    	
+    	gson = new Gson();
     	
     	LOGGER.info("Finished Loading Word2Vec Model");
 	}
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		PrintWriter writer;
-        String err = "";
-        String work_dir = "";
-
-        int num_images;
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
+		
+		int            num_images;
+		String         articleText;
+		String         err;
+		String         work_dir;
+		String 		   image_para_cosine_string;
+		String         image_topkParaConcepts_string;
+		ExtractPhrases phrases;
+		Analysis       analysis;
+		PrintWriter    writer;
+		
+        Map<Integer, List<String>> 			para_distinctiveConcepts;
+        Map<String, Set<String>> 			imageName_tags;
+        Map<Integer, String> 				alignedParaNum_imageName;
+        Map<String, Map<Integer, Double>> 	image_para_cosine;
+        Map<String, List<String>> 			image_topkParaConcepts;
+        
+        PrintWriter file_out;
         
         LOGGER.info("Received GET Request to Sandi Alignment server");
 
@@ -84,9 +107,9 @@ public class SandiServlet extends HttpServlet {
         
         if (work_dir == null) {
 
-              err = "Parameter \"work_dir\" is missing.";
-              
-              LOGGER.warning(err);
+	          err = "Parameter \"work_dir\" is missing.";
+	          
+	          LOGGER.warning(err);
 
               response.sendError(HttpServletResponse.SC_BAD_REQUEST, err);
 
@@ -104,36 +127,48 @@ public class SandiServlet extends HttpServlet {
 
               LOGGER.info("Start alignment");
               
-              ExtractPhrases phrases = new ExtractPhrases(postagger_path);
-              String articleText = work_dir + "/paragraph.txt";
+              phrases = new ExtractPhrases(postagger_path);
+              analysis = new Analysis();
               
-              Map<Integer, List<String>> para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
-              
-              Map<String, Set<String>> imageName_tags = new HashMap<>();
-              
-              LOGGER.info(String.format("Starting Reading image tags from %s", work_dir));
+              articleText = work_dir + "/paragraph.txt";
+              para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
               
               imageName_tags = ModelUtils.readImageTags(work_dir);
-              
-//              int numParas = para_distinctiveConcepts.keySet().size();
               
               LOGGER.info("Alignments in progress...");
               
               try {
-            	  ilp.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
+            	  
+            	  // Align images and paragraphs
+            	  alignedParaNum_imageName = ilp.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
+            	  
+            	  // Get the cosine similarities between the images and paragraphs
+            	  image_para_cosine = analysis.sim_allImagesParas(alignedParaNum_imageName, imageName_tags, para_distinctiveConcepts);
+            	  
+            	  // Write cosine similarities out to file
+            	  image_para_cosine_string = gson.toJson(image_para_cosine);
+            	  file_out = new PrintWriter(new FileOutputStream(new File(work_dir + "/cosine.txt")));
+            	  file_out.println(image_para_cosine_string);
+            	  file_out.flush();            	  
+            	  
+            	  // Get top-k concepts
+            	  image_topkParaConcepts = analysis.sim_imageAlignedPara(alignedParaNum_imageName, imageName_tags, para_distinctiveConcepts);
+            	  
+            	  // Write top-k concepts out to file
+            	  image_topkParaConcepts_string = gson.toJson(image_topkParaConcepts);
+            	  file_out = new PrintWriter(new FileOutputStream(new File(work_dir + "/topkParaConcept.txt")));
+            	  file_out.println(image_topkParaConcepts_string);
+            	  file_out.flush();            	  
+            	  
 				} catch (GRBException e) {
-					e.printStackTrace();
+					e.printStackTrace();	
 				}
               
               LOGGER.info("Finished alignment");
-
-              response.setContentType("application/json");
-//              writer = response.getWriter();
-//              writer.close();
-  
-              LOGGER.info("Finished GET Request to Sandi Alignment server");
-
+ 
         }
+        
+        LOGGER.info("Finished GET Request to Sandi Alignment server");
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

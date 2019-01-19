@@ -52,11 +52,13 @@ public class ILPBased {
 		LOGGER.info("Done loading vectors!");		
 	}
 	
-	public void align(Map<String, Set<String>> imageName_tags, Map<Integer, List<String>> para_distinctiveConcepts, int numImages, String input_folder) throws GRBException, FileNotFoundException{
+	public Map<Integer, String> align(Map<String, Set<String>> imageName_tags, Map<Integer, List<String>> para_distinctiveConcepts, int numImages, String input_folder) throws GRBException, FileNotFoundException{
 		
 		LOGGER.info("Starting alignments");
 		
 		PrintWriter out = new PrintWriter(new FileOutputStream(new File(input_folder + "/alignments.txt")));
+		
+		Map<Integer, String> alignedParaNum_imageName = new HashMap<>();
 
 		/*
 		 * number of images are specific to each article, and can come from
@@ -215,7 +217,9 @@ public class ILPBased {
 					int imageIndex = Integer.parseInt(varName.split("_")[1]);
 					String imageName = GenericUtils.getKeyFromValue(imageName_index, imageIndex).toString();
 					int paraNum = Integer.parseInt(varName.split("_")[2]);
+					
 					if(X[img-1][t-1].get(GRB.DoubleAttr.X) == 1.0){
+						alignedParaNum_imageName.put(paraNum, imageName);
 						out.println(paraNum + "\t" + imageName);
 						out.flush();
 					}
@@ -227,6 +231,8 @@ public class ILPBased {
 		}
 		
 		LOGGER.info("Finished alignments");
+		
+		return alignedParaNum_imageName;
 	}
 	
 //	public static void main(String[] args) throws GRBException, IOException {
