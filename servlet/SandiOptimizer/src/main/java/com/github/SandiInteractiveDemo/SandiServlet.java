@@ -128,11 +128,10 @@ public class SandiServlet extends HttpServlet {
               LOGGER.info("Start alignment");
               
               phrases = new ExtractPhrases(postagger_path);
-              articleText = work_dir + "/paragraph.txt";
               analysis = new Analysis();
-              para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
               
-              LOGGER.info(String.format("Starting Reading image tags from %s", work_dir));
+              articleText = work_dir + "/paragraph.txt";
+              para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
               
               imageName_tags = ModelUtils.readImageTags(work_dir);
               

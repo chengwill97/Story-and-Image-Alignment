@@ -6,17 +6,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
+
+import com.github.SandiInteractiveDemo.SandiServlet;
 
 import evaluation.SemanticAccuracy;
 import models.ILPBased;
 import utils.GenericUtils;
 
 public class Analysis {
+	
+	private final static Logger LOGGER = Logger.getLogger(Analysis.class.getName());
+	
+	public Analysis() {
+		return;
+	}
 
 	public Map<String, Map<Integer, Double>> sim_allImagesParas(
 			Map<Integer, String> alignedParaNum_imageName, 
 			Map<String, Set<String>> imageName_tags,
 			Map<Integer, List<String>> para_distinctiveConcepts){
+		
+		LOGGER.info("Starting to get cosine similarities of images and paragraphs");
 		
 		Map<String, Map<Integer, Double>> image_para_cosine = new HashMap<>();
 		
@@ -38,6 +49,8 @@ public class Analysis {
 			image_para_cosine.put(image, para_cosine);
 		}
 		
+		LOGGER.info("Finished getting cosine similarities of images and paragraphs");
+		
 		return image_para_cosine;
 	}
 
@@ -45,6 +58,8 @@ public class Analysis {
 			Map<Integer, String> alignedParaNum_imageName, 
 			Map<String, Set<String>> imageName_tags,
 			Map<Integer, List<String>> para_distinctiveConcepts) throws IOException{
+		
+		LOGGER.info("Starting to get top-k concepts of each image");
 	
 		Map<String, List<String>> image_topkParaConcepts = new HashMap<>();
 		
@@ -73,6 +88,8 @@ public class Analysis {
 			
 			image_topkParaConcepts.put(image, topkParaConcepts);
 		}
+		
+		LOGGER.info("Finished getting top-k concepts of each image");
 		
 		return image_topkParaConcepts;
 	}
