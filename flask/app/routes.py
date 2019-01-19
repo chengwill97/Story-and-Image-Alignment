@@ -119,6 +119,7 @@ def demo():
 
     results             = list()
     cosine_similarities = dict()
+    topk_concepts       = dict()
     quotes              = None
     folder              = session.pop('folder', None)
     num_images          = session.pop('num_images', 0)
@@ -198,6 +199,7 @@ def demo():
     try:
         results             = demo.get_optimized_alignments(quotes=quotes)
         cosine_similarities = demo.get_cosine_similarities()
+        topk_concepts       = demo.get_topk_concepts()
     except Exception as e:
         app.logger.warn(e)
         traceback.print_exc()
@@ -210,4 +212,5 @@ def demo():
     app.logger.info('Handled Demo Request')
 
     return render_template('demo.html', num_images=num_images, num_texts=num_texts,
-                            results=results, cosine_similarities=cosine_similarities)
+                            results=results, cosine_similarities=cosine_similarities,
+                            topk_concepts=topk_concepts)

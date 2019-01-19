@@ -378,6 +378,32 @@ class SandiWorkflow:
 
         return cosine_similarities
 
+    def get_topk_concepts(self):
+
+        app.logger.info('Starting to retrieve top-k concepts between text and images')
+
+        topk_concepts      = dict()
+        topk_concepts_path = os.path.join(self.folder, 'topkParaConcept.txt')
+
+        try:
+            with open(topk_concepts_path) as f:
+                topk_concepts = json.load(f)
+
+            """
+            Combines concepts together into
+            one string for the concepts of
+            each image
+            """
+            for image_name, concepts in topk_concepts.items():
+                topk_concepts[image_name] = ', '.join(concepts)
+
+        except IOError as e:
+            app.logger.warn('Top-k concepts path DNE: {path}'.format(path=topk_concepts_path))
+
+        app.logger.info('Finished retrieving top-k concepts between text and images')
+
+        return topk_concepts
+
     def collect_uploaded_images(self, uploaded_images):
         """Save images from user to local filesystem
 
