@@ -158,7 +158,7 @@ class SandiWorkflow:
 
         return images_missing_tags
 
-    def run_alignment(self):
+    def run_alignment(self, space_images_evenly=False):
         """Runs sandi image and text alignment
         application
         """
@@ -166,12 +166,14 @@ class SandiWorkflow:
         app.logger.info("Getting optimized alignments")
 
         params = {'work_dir': self.folder, 'num_images': self.num_images}
+        if space_images_evenly:
+            params['space_images_evenly'] = space_images_evenly
 
-        app.logger.debug("Alignment parameters are; working directory: {work_dir}, number images {num_images}"
-                         .format(work_dir=self.folder, num_images=self.num_images))
+        app.logger.debug("Alignment parameters are: working directory: {work_dir}, number images {num_images}, space images evenly {space_images_evenly}"
+                         .format(work_dir=self.folder, num_images=self.num_images, space_images_evenly=space_images_evenly))
 
         try:
-            response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
+            response = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
         except Exception as e:
             app.logger.exception(e)
 
