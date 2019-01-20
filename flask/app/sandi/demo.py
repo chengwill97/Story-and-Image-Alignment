@@ -399,7 +399,10 @@ class SandiWorkflow:
             for image_name, concepts in topk_concepts.items():
                 topk_concepts[image_name] = ', '.join(concepts)
                 # TODO: remove hard-coded 'a'
-                topk_concepts[image_name].remove('a')
+                try:
+                    topk_concepts[image_name].remove('a')
+                except ValueError e:
+                    continue
 
         except IOError as e:
             app.logger.warn('Top-k concepts path DNE: {path}'.format(path=topk_concepts_path))
