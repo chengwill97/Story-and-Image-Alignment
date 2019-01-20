@@ -77,7 +77,7 @@ public class SandiServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
 		
 		int            num_images;
-		Boolean 	   spread_images_evenly;
+		Boolean 	   space_images_evenly;
 		String         work_dir;
 		String         paragraphs_path;
 		String 		   image_para_cosine_string;
@@ -109,13 +109,13 @@ public class SandiServlet extends HttpServlet {
         	num_images = 0;
         }
         
-        if (null != request.getParameter("spread_images_evenly")) {
-        	spread_images_evenly = true;
+        if (null != request.getParameter("space_images_evenly")) {
+        	space_images_evenly = true;
         } else {
-        	spread_images_evenly = false;
+        	space_images_evenly = false;
         }
         
-        LOGGER.info(String.format("spread_images_evenly set to %s", spread_images_evenly));
+        LOGGER.info(String.format("space_images_evenly set to %s", space_images_evenly));
         
         if (work_dir == null) {
 
@@ -153,7 +153,7 @@ public class SandiServlet extends HttpServlet {
             	  
             	  // Align images and paragraphs
             	  alignedParaNum_imageName = ilp.align(imageName_tags, para_distinctiveConcepts, 
-            			  							   num_images, work_dir, spread_images_evenly);
+            			  							   num_images, work_dir, space_images_evenly);
             	  
             	  // Get the cosine similarities between the images and paragraphs
             	  image_para_cosine = analysis.sim_allImagesParas(alignedParaNum_imageName, imageName_tags, para_distinctiveConcepts);

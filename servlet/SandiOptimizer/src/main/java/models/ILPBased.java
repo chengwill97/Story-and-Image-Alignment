@@ -54,7 +54,7 @@ public class ILPBased {
 	
 	public Map<Integer, String> align(Map<String, Set<String>> imageName_tags, 
 			Map<Integer, List<String>> para_distinctiveConcepts, int numImages, 
-			String input_folder, Boolean spread_images_evenly) 
+			String input_folder, Boolean space_images_evenly) 
 					throws GRBException, FileNotFoundException{
 		
 		LOGGER.info("Starting alignments");
@@ -203,7 +203,7 @@ public class ILPBased {
 				
 			}
 			
-			if (spread_images_evenly) {
+			if (space_images_evenly) {
 				
 				double u = Math.ceil((double)(numParas - 1)/(double)(numImages - 1));
 				double l = Math.floor((double)(numParas + 1)/(double)(numImages + 1));
