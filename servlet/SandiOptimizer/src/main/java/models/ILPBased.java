@@ -52,7 +52,10 @@ public class ILPBased {
 		LOGGER.info("Done loading vectors!");		
 	}
 	
-	public Map<Integer, String> align(Map<String, Set<String>> imageName_tags, Map<Integer, List<String>> para_distinctiveConcepts, int numImages, String input_folder) throws GRBException, FileNotFoundException{
+	public Map<Integer, String> align(Map<String, Set<String>> imageName_tags, 
+			Map<Integer, List<String>> para_distinctiveConcepts, int numImages, 
+			String input_folder, Boolean space_images_evenly) 
+					throws GRBException, FileNotFoundException{
 		
 		LOGGER.info("Starting alignments");
 		
@@ -198,6 +201,42 @@ public class ILPBased {
 				X_constr_column.add(c);
 			}catch(Exception e) {
 				
+			}
+			
+			if (space_images_evenly) {
+				
+				double u = Math.ceil((double)(numParas - 1)/(double)(numImages - 1));
+				double l = Math.floor((double)(numParas + 1)/(double)(numImages + 1));
+				
+				for(int t = 1; t <= numParas-(u-1); t++) {
+					expr = new GRBLinExpr();
+					for(int img = 1; img <= imageName_tags.size(); img ++){
+						for(int s = 0; s <= (u-1); s ++) {
+							expr.addTerm(1, X[img-1][t-1+s]);
+						}
+					}
+					try{
+						GRBConstr c = model.addConstr(expr, GRB.GREATER_EQUAL, 1.0, "c_x" +"_aes1_" + String.valueOf(t));
+						X_constr_column.add(c);
+					}catch(Exception e){
+						continue;
+					}
+				}
+				
+				for(int t = 1; t <= numParas-(l-1); t++) {
+					expr = new GRBLinExpr();
+					for(int img = 1; img <= imageName_tags.size(); img ++){
+						for(int s = 0; s <= (l-1); s ++) {
+							expr.addTerm(1, X[img-1][t-1+s]);
+						}
+					}
+					try{
+						GRBConstr c = model.addConstr(expr, GRB.LESS_EQUAL, 1.0, "c_x" +"_aes2_" + String.valueOf(t));
+						X_constr_column.add(c);
+					}catch(Exception e){
+						continue;
+					}
+				}
 			}
 			
 			model.update();

@@ -77,14 +77,14 @@ public class SandiServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {		
 		
 		int            num_images;
-		String         articleText;
-		String         err;
+		Boolean 	   space_images_evenly;
 		String         work_dir;
+		String         paragraphs_path;
 		String 		   image_para_cosine_string;
 		String         image_topkParaConcepts_string;
+		String         err;
 		ExtractPhrases phrases;
 		Analysis       analysis;
-		PrintWriter    writer;
 		
         Map<Integer, List<String>> 			para_distinctiveConcepts;
         Map<String, Set<String>> 			imageName_tags;
@@ -97,13 +97,25 @@ public class SandiServlet extends HttpServlet {
         LOGGER.info("Received GET Request to Sandi Alignment server");
 
         /* Read request parameters */
-        work_dir    = request.getParameter("work_dir");
+        work_dir = request.getParameter("work_dir");
         
         try {
-        	num_images  = Integer.parseInt(request.getParameter("num_images"));
+        	num_images = Integer.parseInt(request.getParameter("num_images"));
         } catch(NumberFormatException e)  {
-        	num_images  = 0;
+        	LOGGER.warning("Could not parse int from num_images");
+        	num_images = 0;
+        } catch(Exception e) {
+        	LOGGER.warning("Something expected happened when getting num_images");
+        	num_images = 0;
         }
+        
+        if (null != request.getParameter("space_images_evenly")) {
+        	space_images_evenly = true;
+        } else {
+        	space_images_evenly = false;
+        }
+        
+        LOGGER.info(String.format("space_images_evenly set to %s", space_images_evenly));
         
         if (work_dir == null) {
 
@@ -130,8 +142,8 @@ public class SandiServlet extends HttpServlet {
               phrases = new ExtractPhrases(postagger_path);
               analysis = new Analysis();
               
-              articleText = work_dir + "/paragraph.txt";
-              para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(articleText);
+              paragraphs_path = work_dir + "/paragraph.txt";
+              para_distinctiveConcepts = phrases.distinctivePhrasesPerParagraph(paragraphs_path);
               
               imageName_tags = ModelUtils.readImageTags(work_dir);
               
@@ -140,10 +152,13 @@ public class SandiServlet extends HttpServlet {
               try {
             	  
             	  // Align images and paragraphs
-            	  alignedParaNum_imageName = ilp.align(imageName_tags, para_distinctiveConcepts, num_images, work_dir);
+            	  alignedParaNum_imageName = ilp.align(imageName_tags, para_distinctiveConcepts, 
+            			  							   num_images, work_dir, space_images_evenly);
             	  
             	  // Get the cosine similarities between the images and paragraphs
             	  image_para_cosine = analysis.sim_allImagesParas(alignedParaNum_imageName, imageName_tags, para_distinctiveConcepts);
+            	  
+            	  LOGGER.info(String.format("Writing cosines to %s", work_dir + "/cosine.txt"));
             	  
             	  // Write cosine similarities out to file
             	  image_para_cosine_string = gson.toJson(image_para_cosine);
@@ -153,6 +168,8 @@ public class SandiServlet extends HttpServlet {
             	  
             	  // Get top-k concepts
             	  image_topkParaConcepts = analysis.sim_imageAlignedPara(alignedParaNum_imageName, imageName_tags, para_distinctiveConcepts);
+            	  
+            	  LOGGER.info(String.format("Writing top-k concepts to %s", work_dir + "/topkParaConcept.txt"));
             	  
             	  // Write top-k concepts out to file
             	  image_topkParaConcepts_string = gson.toJson(image_topkParaConcepts);

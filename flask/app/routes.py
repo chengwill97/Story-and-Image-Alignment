@@ -125,6 +125,7 @@ def demo():
     num_images          = session.pop('num_images', 0)
     num_texts           = session.pop('num_texts', 0)
     include_quotes      = session.pop('include_quotes', 'include_quotes' in request.form)
+    space_images_evenly = session.pop('space_images_evenly', 'space_images_evenly' in request.form)
 
     if request.method == 'GET':
         return render_template('demo.html', num_images=0, num_texts=0,
@@ -170,10 +171,11 @@ def demo():
         if images_missing_tags:
             app.logger.info('Could not retrieve tags for some images')
 
-            session['folder']         = demo.folder
-            session['num_images']     = num_images
-            session['num_texts']      = num_texts
-            session['include_quotes'] = 'include_quotes' in request.form
+            session['folder']              = demo.folder
+            session['num_images']          = num_images
+            session['num_texts']           = num_texts
+            session['include_quotes']      = 'include_quotes' in request.form
+            session['space_images_evenly'] = 'space_images_evenly' in request.form
 
             return redirect(url_for('images_missing_tags',
                                     images_missing_tags=images_missing_tags))
@@ -184,7 +186,7 @@ def demo():
         # Get new tags here
         demo.collect_missing_tags(request.form)
 
-    demo.run_alignment()
+    demo.run_alignment(space_images_evenly=space_images_evenly)
 
     app.logger.info('Include quotes: {include_quotes}'.format(include_quotes=include_quotes))
 
