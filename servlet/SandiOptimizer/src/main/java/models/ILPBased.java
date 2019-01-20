@@ -52,11 +52,16 @@ public class ILPBased {
 		LOGGER.info("Done loading vectors!");		
 	}
 	
-	public void align(Map<String, Set<String>> imageName_tags, Map<Integer, List<String>> para_distinctiveConcepts, int numImages, String input_folder) throws GRBException, FileNotFoundException{
+	public Map<Integer, String> align(Map<String, Set<String>> imageName_tags, 
+			Map<Integer, List<String>> para_distinctiveConcepts, int numImages, 
+			String input_folder, Boolean space_images_evenly) 
+					throws GRBException, FileNotFoundException{
 		
 		LOGGER.info("Starting alignments");
 		
 		PrintWriter out = new PrintWriter(new FileOutputStream(new File(input_folder + "/alignments.txt")));
+		
+		Map<Integer, String> alignedParaNum_imageName = new HashMap<>();
 
 		/*
 		 * number of images are specific to each article, and can come from
@@ -198,6 +203,42 @@ public class ILPBased {
 				
 			}
 			
+			if (space_images_evenly) {
+				
+				double u = Math.ceil((double)(numParas - 1)/(double)(numImages - 1));
+				double l = Math.floor((double)(numParas + 1)/(double)(numImages + 1));
+				
+				for(int t = 1; t <= numParas-(u-1); t++) {
+					expr = new GRBLinExpr();
+					for(int img = 1; img <= imageName_tags.size(); img ++){
+						for(int s = 0; s <= (u-1); s ++) {
+							expr.addTerm(1, X[img-1][t-1+s]);
+						}
+					}
+					try{
+						GRBConstr c = model.addConstr(expr, GRB.GREATER_EQUAL, 1.0, "c_x" +"_aes1_" + String.valueOf(t));
+						X_constr_column.add(c);
+					}catch(Exception e){
+						continue;
+					}
+				}
+				
+				for(int t = 1; t <= numParas-(l-1); t++) {
+					expr = new GRBLinExpr();
+					for(int img = 1; img <= imageName_tags.size(); img ++){
+						for(int s = 0; s <= (l-1); s ++) {
+							expr.addTerm(1, X[img-1][t-1+s]);
+						}
+					}
+					try{
+						GRBConstr c = model.addConstr(expr, GRB.LESS_EQUAL, 1.0, "c_x" +"_aes2_" + String.valueOf(t));
+						X_constr_column.add(c);
+					}catch(Exception e){
+						continue;
+					}
+				}
+			}
+			
 			model.update();
 			
 			//------------------------------------------------------------------------------------------------------------------
@@ -215,7 +256,9 @@ public class ILPBased {
 					int imageIndex = Integer.parseInt(varName.split("_")[1]);
 					String imageName = GenericUtils.getKeyFromValue(imageName_index, imageIndex).toString();
 					int paraNum = Integer.parseInt(varName.split("_")[2]);
+					
 					if(X[img-1][t-1].get(GRB.DoubleAttr.X) == 1.0){
+						alignedParaNum_imageName.put(paraNum, imageName);
 						out.println(paraNum + "\t" + imageName);
 						out.flush();
 					}
@@ -227,6 +270,8 @@ public class ILPBased {
 		}
 		
 		LOGGER.info("Finished alignments");
+		
+		return alignedParaNum_imageName;
 	}
 	
 //	public static void main(String[] args) throws GRBException, IOException {

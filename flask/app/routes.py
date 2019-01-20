@@ -117,12 +117,15 @@ def demo():
     """
     app.logger.info('Handling Demo Request')
 
-    results        = list()
-    quotes         = None
-    folder         = session.pop('folder', None)
-    num_images     = session.pop('num_images', 0)
-    num_texts      = session.pop('num_texts', 0)
-    include_quotes = session.pop('include_quotes', 'include_quotes' in request.form)
+    results             = list()
+    cosine_similarities = dict()
+    topk_concepts       = dict()
+    quotes              = None
+    folder              = session.pop('folder', None)
+    num_images          = session.pop('num_images', 0)
+    num_texts           = session.pop('num_texts', 0)
+    include_quotes      = session.pop('include_quotes', 'include_quotes' in request.form)
+    space_images_evenly = session.pop('space_images_evenly', 'space_images_evenly' in request.form)
 
     if request.method == 'GET':
         return render_template('demo.html', num_images=0, num_texts=0,
@@ -168,10 +171,11 @@ def demo():
         if images_missing_tags:
             app.logger.info('Could not retrieve tags for some images')
 
-            session['folder']         = demo.folder
-            session['num_images']     = num_images
-            session['num_texts']      = num_texts
-            session['include_quotes'] = 'include_quotes' in request.form
+            session['folder']              = demo.folder
+            session['num_images']          = num_images
+            session['num_texts']           = num_texts
+            session['include_quotes']      = 'include_quotes' in request.form
+            session['space_images_evenly'] = 'space_images_evenly' in request.form
 
             return redirect(url_for('images_missing_tags',
                                     images_missing_tags=images_missing_tags))
@@ -182,7 +186,7 @@ def demo():
         # Get new tags here
         demo.collect_missing_tags(request.form)
 
-    demo.run_alignment()
+    demo.run_alignment(space_images_evenly=space_images_evenly)
 
     app.logger.info('Include quotes: {include_quotes}'.format(include_quotes=include_quotes))
 
@@ -195,7 +199,9 @@ def demo():
     a randomized order of images and texts
     """
     try:
-        results = demo.get_optimized_alignments(quotes=quotes)
+        results             = demo.get_optimized_alignments(quotes=quotes)
+        cosine_similarities = demo.get_cosine_similarities()
+        topk_concepts       = demo.get_topk_concepts()
     except Exception as e:
         app.logger.warn(e)
         traceback.print_exc()
@@ -208,7 +214,8 @@ def demo():
     app.logger.info('Handled Demo Request')
 
     return render_template('demo.html', num_images=num_images, num_texts=num_texts,
-                            results=results)
+                            results=results, cosine_similarities=cosine_similarities,
+                            topk_concepts=topk_concepts)
 
 @app.route('/examples', methods=['GET', 'POST'])
 def examples():

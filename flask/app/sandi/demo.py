@@ -95,6 +95,8 @@ class SandiWorkflow:
         """
         app.logger.info('Retrieving tags from images')
 
+        yolo_tags           = dict()
+        google_tags         = dict()
         images_missing_tags = list()
 
         args_tags = (self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
@@ -156,7 +158,7 @@ class SandiWorkflow:
 
         return images_missing_tags
 
-    def run_alignment(self):
+    def run_alignment(self, space_images_evenly=False):
         """Runs sandi image and text alignment
         application
         """
@@ -164,12 +166,14 @@ class SandiWorkflow:
         app.logger.info("Getting optimized alignments")
 
         params = {'work_dir': self.folder, 'num_images': self.num_images}
+        if space_images_evenly:
+            params['space_images_evenly'] = space_images_evenly
 
-        app.logger.debug("Alignment parameters are; working directory: {work_dir}, number images {num_images}"
-                         .format(work_dir=self.folder, num_images=self.num_images))
+        app.logger.debug("Alignment parameters are: working directory: {work_dir}, number images {num_images}, space images evenly {space_images_evenly}"
+                         .format(work_dir=self.folder, num_images=self.num_images, space_images_evenly=space_images_evenly))
 
         try:
-            response     = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
+            response = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
         except Exception as e:
             app.logger.exception(e)
 
@@ -343,6 +347,70 @@ class SandiWorkflow:
 
         return top_quote
 
+    def get_cosine_similarities(self):
+        """Retrives the image to paragraph cosine
+        similarities outputted from the SANDI Servlet
+
+        Returns:
+            dict: map image-paragraph cosine similarities for each image
+        """
+
+        app.logger.info('Starting to retrieve cosine similarities between text and images')
+
+        cosine_similarities      = dict()
+        cosine_similarities_path = os.path.join(self.folder, 'cosine.txt')
+
+        try:
+            with open(cosine_similarities_path) as f:
+                cosine_similarities = json.load(f)
+
+            """
+            Converts each mapping of image name to dict
+            to a mapping of image name to list of cosine
+            similarities in paragraph index order
+            """
+            for image_name, para_cosine_map in cosine_similarities.items():
+                indices = sorted(para_cosine_map.keys(), key=lambda para: int(para))
+                cosine_similarities[image_name] = ['{0:.3f}'.format(para_cosine_map[indice]) for indice in indices]
+
+        except IOError as e:
+            app.logger.warn('Cosine similarities path DNE: {path}'.format(path=cosine_similarities_path))
+
+        app.logger.info('Finished retrieving cosine similarities between text and images')
+
+        return cosine_similarities
+
+    def get_topk_concepts(self):
+
+        app.logger.info('Starting to retrieve top-k concepts between text and images')
+
+        topk_concepts      = dict()
+        topk_concepts_path = os.path.join(self.folder, 'topkParaConcept.txt')
+
+        try:
+            with open(topk_concepts_path) as f:
+                topk_concepts = json.load(f)
+
+            """
+            Combines concepts together into
+            one string for the concepts of
+            each image
+            """
+            for image_name, concepts in topk_concepts.items():
+                topk_concepts[image_name] = ', '.join(concepts)
+                # TODO: remove hard-coded 'a'
+                try:
+                    topk_concepts[image_name].remove('a')
+                except ValueError e:
+                    continue
+
+        except IOError as e:
+            app.logger.warn('Top-k concepts path DNE: {path}'.format(path=topk_concepts_path))
+
+        app.logger.info('Finished retrieving top-k concepts between text and images')
+
+        return topk_concepts
+
     def collect_uploaded_images(self, uploaded_images):
         """Save images from user to local filesystem
 
@@ -374,7 +442,7 @@ class SandiWorkflow:
         paragraphs = list()
 
         for input_text in uploaded_text_files:
-            paragraphs += input_text.read().decode('cp1252').split('\n')
+            paragraphs += input_text.read().decode('cp1252').splitlines()
 
         self.num_texts = len(paragraphs)
 
@@ -390,7 +458,9 @@ class SandiWorkflow:
 
         app.logger.debug('Saving paragraphs from text input')
 
-        paragraphs = filter(None, uploaded_text.split('\n'))
+        paragraphs = filter(None, uploaded_text.splitlines())
+
+        app.logger.debug(paragraphs)
 
         self.num_texts = len(paragraphs)
 
