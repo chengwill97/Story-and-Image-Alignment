@@ -401,7 +401,7 @@ class SandiWorkflow:
                 # TODO: remove hard-coded 'a'
                 try:
                     topk_concepts[image_name].remove('a')
-                except ValueError e:
+                except ValueError as e:
                     continue
 
         except IOError as e:
