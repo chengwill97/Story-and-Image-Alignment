@@ -3,21 +3,6 @@
 
     <h1 class="display-4" id="top">Your Story and Images are Aligned!</h1>
 
-    {% if num_images %}
-        <button type="button" class="btn btn-outline-info">Images <span class="badge badge-info">{{ num_images }}</span></button>
-    {% else %}
-        <button type="button" class="btn btn-outline-secondary">Images <span class="badge badge-info">{{ num_images }}</span></button>
-    {% endif %}
-
-    {% if num_texts %}
-        <button type="button" class="btn btn-outline-info">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
-    {% else %}
-        <button type="button" class="btn btn-outline-secondary">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
-    {% endif %}
-
-    <br>
-    <br>
-
     <nav>
         <div class="nav nav-pills mb-3" id="nav-tab" role="tablist">
             <a class="nav-item nav-link active" id="nav-story-tab" data-toggle="tab"
@@ -28,7 +13,7 @@
                 href="#analysis" role="tab" aria-controls="analysis" aria-selected="false">
                 Story Analysis
             </a>
-            <a class="btn nav-item nav-link" id="create-tab"
+            <a class="btn btn-success nav-item nav-link ml-auto" id="create-tab"
                 href="{{ url_for('index') }}" role="button">
                 Create Another Article
             </a>
@@ -68,6 +53,21 @@
         <!-- Start of Analysis Tab -->
         <div class="tab-pane fade" id="analysis" role="tabpanel" aria-labelledby="analysis-tab">
 
+            {% if num_images %}
+                <button type="button" class="btn btn-outline-info">Images <span class="badge badge-info">{{ num_images }}</span></button>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary">Images <span class="badge badge-info">{{ num_images }}</span></button>
+            {% endif %}
+
+            {% if num_texts %}
+                <button type="button" class="btn btn-outline-info">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
+            {% endif %}
+
+            <br>
+            <br>
+
             <table class="table table-bordered table-light">
                 {% if cosine_similarities %}
                     <thead class="table-dark">
@@ -106,7 +106,8 @@
                     <thead class="table-dark">
                         <tr>
                             <th scope="col" style="width: 16.66%">Image name</th>
-                            <th scope="col">concepts</th>
+                            <th scope="col">Concepts</th>
+                            <th scope="col">Tags</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,6 +120,7 @@
                                     </span>
                                 </th>
                                 <td>{{ concepts }}</td>
+                                <td>{{ tags[image_name] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

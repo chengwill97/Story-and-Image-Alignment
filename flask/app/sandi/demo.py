@@ -75,7 +75,7 @@ class SandiWorkflow:
 
             # Retrieve image names
             with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
-                self.image_names = [line.split('\t').pop(0).encode('ascii', 'replace') for line in f]
+                self.image_names = [line.split('\t').pop(0) for line in f]
         else:
             # Create directory to store results and images
             self.create_data_folder()
@@ -294,6 +294,27 @@ class SandiWorkflow:
 
         return results
 
+    def get_tags(self):
+        """Return maps of file name to
+        tags of acquired from image
+
+        Returns:
+            dict: map of image names to tags
+        """
+        app.logger.info('Starting to retrieve tags')
+        tags = dict()
+
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+            for line in f:
+                line_split = line.split('\t')
+                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(SandiWorkflow.TAGS_DELIM)])
+                image_name = line_split.pop()
+
+                tags[image_name] = ', '.join(image_tags)
+
+        app.logger.info('Finished retrieving tags')
+        return tags
+
     def get_images(self):
         """Returns dictionary that maps
         file name to image content
@@ -301,7 +322,7 @@ class SandiWorkflow:
         Returns:
             dict: map of image names to images
         """
-        app.logger.info('Starting to load in images')
+        app.logger.info('Starting to retrieve images')
 
         images = dict()
 
@@ -318,7 +339,7 @@ class SandiWorkflow:
                     'type'      : self.mime.from_file(image_path),
                 }
 
-        app.logger.info('Finished loading in images')
+        app.logger.info('Finished retrieving images')
 
         return images
 
