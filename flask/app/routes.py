@@ -226,3 +226,7 @@ def demo():
                             tags=tags,
                             cosine_similarities=cosine_similarities,
                             topk_concepts=topk_concepts)
+
+@app.route('/examples', methods=['GET', 'POST'])
+def examples():
+    return render_template('examples.html')
