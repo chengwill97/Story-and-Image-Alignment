@@ -118,6 +118,8 @@ def demo():
     app.logger.info('Handling Demo Request')
 
     results             = list()
+    images              = list()
+    tags                = dict()
     cosine_similarities = dict()
     topk_concepts       = dict()
     quotes              = None
@@ -207,14 +209,22 @@ def demo():
         traceback.print_exc()
         results = demo.get_randomized_alignments(quotes=quotes)
 
+    images = demo.get_images()
+    tags   = demo.get_tags()
+
     app.logger.info('Clearing old session')
 
     session.clear()
 
     app.logger.info('Handled Demo Request')
 
-    return render_template('demo.html', num_images=num_images, num_texts=num_texts,
-                            results=results, cosine_similarities=cosine_similarities,
+    return render_template('demo.html',
+                            num_images=num_images,
+                            num_texts=num_texts,
+                            results=results,
+                            images=images,
+                            tags=tags,
+                            cosine_similarities=cosine_similarities,
                             topk_concepts=topk_concepts)
 
 @app.route('/examples', methods=['GET', 'POST'])

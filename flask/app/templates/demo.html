@@ -3,21 +3,6 @@
 
     <h1 class="display-4" id="top">Your Story and Images are Aligned!</h1>
 
-    {% if num_images %}
-        <button type="button" class="btn btn-outline-info">Images <span class="badge badge-info">{{ num_images }}</span></button>
-    {% else %}
-        <button type="button" class="btn btn-outline-secondary">Images <span class="badge badge-info">{{ num_images }}</span></button>
-    {% endif %}
-
-    {% if num_texts %}
-        <button type="button" class="btn btn-outline-info">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
-    {% else %}
-        <button type="button" class="btn btn-outline-secondary">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
-    {% endif %}
-
-    <br>
-    <br>
-
     <nav>
         <div class="nav nav-pills mb-3" id="nav-tab" role="tablist">
             <a class="nav-item nav-link active" id="nav-story-tab" data-toggle="tab"
@@ -28,7 +13,7 @@
                 href="#analysis" role="tab" aria-controls="analysis" aria-selected="false">
                 Story Analysis
             </a>
-            <a class="btn nav-item nav-link" id="create-tab"
+            <a class="btn btn-success nav-item nav-link ml-auto" id="create-tab"
                 href="{{ url_for('index') }}" role="button">
                 Create Another Article
             </a>
@@ -42,8 +27,11 @@
         <!-- Start of Story Tab -->
         <div class="tab-pane fade show active" id="nav-story" role="tabpanel" aria-labelledby="nav-story-tab">
             {% for result in results %}
-                {% if result.type %}
-                    <img src="data:{{result.type}}};base64,{{result.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
+                {% if result.file_name %}
+
+                    <img src="data:{{images[result.file_name].type}}};base64,{{images[result.file_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;">
+
+                    <br>
 
                     {% if result.quote %}
                         <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
@@ -65,51 +53,79 @@
         <!-- Start of Analysis Tab -->
         <div class="tab-pane fade" id="analysis" role="tabpanel" aria-labelledby="analysis-tab">
 
-            <table class="table table-striped table-responsive text-center">
+            {% if num_images %}
+                <button type="button" class="btn btn-outline-info">Images <span class="badge badge-info">{{ num_images }}</span></button>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary">Images <span class="badge badge-info">{{ num_images }}</span></button>
+            {% endif %}
+
+            {% if num_texts %}
+                <button type="button" class="btn btn-outline-info">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
+            {% endif %}
+
+            <br>
+            <br>
+
+            <table class="table table-bordered table-light">
                 {% if cosine_similarities %}
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
-                            <th scope="col">image name</th>
+                            <th scope="col" style="width: 16.66%">Image name</th>
                             {% for text_index in range(1, num_texts+1) %}
-                                <th scope="col">Para {{ text_index }}</th>
+                                <th scope="col"><span>Para. {{ text_index }}</span></th>
                             {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for image_name, cosines in cosine_similarities.items() %}
                             <tr>
-                                <th scope="row">{{ image_name }}</th>
+                                <th scope="row" style="width: 16.66%">
+
+                                    <img src="data:{{images[image_name].type}}};base64,{{images[image_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                                    <span>
+                                        {{ image_name }}
+                                    </span>
+                                </th>
                                 {% for cosine in cosines %}
-                                    <td>{{ cosine }}</td>
+                                    <td style="background: {{ cosine.color }}">{{ cosine.cosine }}</td>
                                 {% endfor %}
                             </tr>
                         {% endfor %}
                     </tbody>
                 {% else %}
-                    <thead>
+                    <thead class="table-dark">
                         <tr><th scope="col">No cosine similarities are available</th></tr>
                     </thead>
                 {% endif %}
             </table>
 
-            <table class="table table-striped table-responsive text-center">
+            <table class="table table-bordered table-light">
                 {% if topk_concepts %}
-                    <thead>
+                    <thead class="table-dark">
                         <tr>
-                            <th scope="col">image name</th>
-                            <th scope="col">concepts</th>
+                            <th scope="col" style="width: 16.66%">Image name</th>
+                            <th scope="col">Concepts</th>
+                            <th scope="col">Tags</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for image_name, concepts in topk_concepts.items() %}
                             <tr>
-                                <th scope="row">{{ image_name }}</th>
+                                <th scope="row" style="width: 16.66%">
+                                    <img src="data:{{images[image_name].type}}};base64,{{images[image_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                                    <span>
+                                        {{ image_name }}
+                                    </span>
+                                </th>
                                 <td>{{ concepts }}</td>
+                                <td>{{ tags[image_name] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 {% else %}
-                    <thead>
+                    <thead class="table-dark">
                         <tr><th scope="col">No concepts are available</th></tr>
                     </thead>
                 {% endif %}

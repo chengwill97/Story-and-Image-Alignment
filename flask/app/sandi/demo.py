@@ -272,37 +272,76 @@ class SandiWorkflow:
 
                 app.logger.debug('Appending {image} to paragraph {para}'.format(image=alignments[i], para=i))
 
-                file_name   = alignments[i]
-                file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
+                result = {'file_name' : alignments[i],
+                          'quote'     : None
+                        }
 
-                """Read in image as base64 string
-                and append to results
+                results.append(result)
+
+                """ Find best quote with best
+                cosine similarity to paragraph
                 """
-                with open(file_path, 'r') as image:
+                if quotes:
 
-                    result = {'file_name'   : file_name,
-                              'data'        : base64.b64encode(image.read()).decode('ascii'),
-                              'type'        : self.mime.from_file(file_path),
-                              'quote'       : None
-                            }
+                    result['quote'] = self.get_best_quote(paragraph, quotes[file_name], quote_used)
 
-                    results.append(result)
-
-                    """ Find best quote with best
-                    cosine similarity to paragraph
-                    """
-                    if quotes:
-
-                        result['quote'] = self.get_best_quote(paragraph, quotes[file_name], quote_used)
-
-                        app.logger.debug('Appending quote {quote} with {file_name} to \
-                                          paragraphs {i}'.format(quote=result['quote'],
-                                                                 file_name=result['file_name'],
-                                                                 i=i))
+                    app.logger.debug('Appending quote {quote} with {file_name} to \
+                                        paragraphs {i}'.format(quote=result['quote'],
+                                                                file_name=result['file_name'],
+                                                                i=i))
 
         app.logger.info('Finished aligning images and texts')
 
         return results
+
+    def get_tags(self):
+        """Return maps of file name to
+        tags of acquired from image
+
+        Returns:
+            dict: map of image names to tags
+        """
+        app.logger.info('Starting to retrieve tags')
+        tags = dict()
+
+        with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+            for line in f:
+                line_split = line.split('\t')
+                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(SandiWorkflow.TAGS_DELIM)])
+                image_name = line_split.pop()
+
+                tags[image_name] = ', '.join(image_tags)
+
+        app.logger.info('Finished retrieving tags')
+        return tags
+
+    def get_images(self):
+        """Returns dictionary that maps
+        file name to image content
+
+        Returns:
+            dict: map of image names to images
+        """
+        app.logger.info('Starting to retrieve images')
+
+        images = dict()
+
+        """Read in image as base64 string
+        and append to results
+        """
+        for image_name in self.image_names:
+            image_info = dict()
+            image_path = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, image_name)
+
+            with open(image_path, 'r') as image:
+                images[image_name] = {
+                    'data'      : base64.b64encode(image.read()).decode('ascii'),
+                    'type'      : self.mime.from_file(image_path),
+                }
+
+        app.logger.info('Finished retrieving images')
+
+        return images
 
     def get_quotes(self):
         """Runs quote suggestion applicaiton
@@ -370,8 +409,20 @@ class SandiWorkflow:
             similarities in paragraph index order
             """
             for image_name, para_cosine_map in cosine_similarities.items():
+                cosine_similarities[image_name] = list()
                 indices = sorted(para_cosine_map.keys(), key=lambda para: int(para))
-                cosine_similarities[image_name] = ['{0:.3f}'.format(para_cosine_map[indice]) for indice in indices]
+                for indice in indices:
+                    cosine = para_cosine_map[indice]
+                    color  = self.cosine_to_256(cosine)
+                    red    = 255 - color
+                    green  = color
+                    blue   = 0
+
+                    cosine_similarities[image_name].append(
+                        {'cosine' : '{0:.3f}'.format(cosine),
+                         'color'  : '#{0:02x}{1:02x}{2:02x}'.format(red, green, blue)
+                        }
+                    )
 
         except IOError as e:
             app.logger.warn('Cosine similarities path DNE: {path}'.format(path=cosine_similarities_path))
@@ -379,6 +430,18 @@ class SandiWorkflow:
         app.logger.info('Finished retrieving cosine similarities between text and images')
 
         return cosine_similarities
+
+    def cosine_to_256(self, cosine):
+        """converts cosine similarity values to range [0, 255]
+
+        Args:
+            cosine (float): float in range [-1, 1]
+
+        Returns:
+            int: cosine normalized to range [0, 256]
+        """
+        color  = round(255 * (cosine + 1.0) / 2.0)
+        return int(max(0, min(color, 255)))
 
     def get_topk_concepts(self):
 
@@ -397,12 +460,18 @@ class SandiWorkflow:
             each image
             """
             for image_name, concepts in topk_concepts.items():
-                topk_concepts[image_name] = ', '.join(concepts)
+                concepts = [concept.encode('ascii', 'replace') for concept in concepts]
+
                 # TODO: remove hard-coded 'a'
                 try:
-                    topk_concepts[image_name].remove('a')
+                    concepts.remove('a')
                 except ValueError as e:
-                    continue
+                    pass
+                except Exception as e:
+                    app.logger.warn('Unhandled exception')
+                    app.logger.warn(e)
+
+                topk_concepts[image_name] = ', '.join(concepts)
 
         except IOError as e:
             app.logger.warn('Top-k concepts path DNE: {path}'.format(path=topk_concepts_path))
