@@ -370,8 +370,20 @@ class SandiWorkflow:
             similarities in paragraph index order
             """
             for image_name, para_cosine_map in cosine_similarities.items():
+                cosine_similarities[image_name] = list()
                 indices = sorted(para_cosine_map.keys(), key=lambda para: int(para))
-                cosine_similarities[image_name] = ['{0:.3f}'.format(para_cosine_map[indice]) for indice in indices]
+                for indice in indices:
+                    cosine = para_cosine_map[indice]
+                    color  = self.cosine_to_256(cosine)
+                    red    = 255 - color
+                    green  = color
+                    blue   = 0
+
+                    cosine_similarities[image_name].append(
+                        {'cosine' : '{0:.3f}'.format(cosine),
+                         'color'  : '#{0:02x}{1:02x}{2:02x}'.format(red, green, blue)
+                        }
+                    )
 
         except IOError as e:
             app.logger.warn('Cosine similarities path DNE: {path}'.format(path=cosine_similarities_path))
@@ -379,6 +391,18 @@ class SandiWorkflow:
         app.logger.info('Finished retrieving cosine similarities between text and images')
 
         return cosine_similarities
+
+    def cosine_to_256(self, cosine):
+        """converts cosine similarity values to range [0, 255]
+
+        Args:
+            cosine (float): float in range [-1, 1]
+
+        Returns:
+            int: cosine normalized to range [0, 256]
+        """
+        color  = round(255 * (cosine + 1.0) / 2.0)
+        return int(max(0, min(color, 255)))
 
     def get_topk_concepts(self):
 
