@@ -42,8 +42,11 @@
         <!-- Start of Story Tab -->
         <div class="tab-pane fade show active" id="nav-story" role="tabpanel" aria-labelledby="nav-story-tab">
             {% for result in results %}
-                {% if result.type %}
-                    <img src="data:{{result.type}}};base64,{{result.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
+                {% if result.file_name %}
+
+                    <img src="data:{{images[result.file_name].type}}};base64,{{images[result.file_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;">
+
+                    <br>
 
                     {% if result.quote %}
                         <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
@@ -69,7 +72,7 @@
                 {% if cosine_similarities %}
                     <thead class="table-dark">
                         <tr>
-                            <th scope="col">Image name</th>
+                            <th scope="col" style="width: 16.66%">Image name</th>
                             {% for text_index in range(1, num_texts+1) %}
                                 <th scope="col"><span>Para. {{ text_index }}</span></th>
                             {% endfor %}
@@ -78,7 +81,13 @@
                     <tbody>
                         {% for image_name, cosines in cosine_similarities.items() %}
                             <tr>
-                                <th scope="row">{{ image_name }}</th>
+                                <th scope="row" style="width: 16.66%">
+
+                                    <img src="data:{{images[image_name].type}}};base64,{{images[image_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                                    <span>
+                                        {{ image_name }}
+                                    </span>
+                                </th>
                                 {% for cosine in cosines %}
                                     <td style="background: {{ cosine.color }}">{{ cosine.cosine }}</td>
                                 {% endfor %}
@@ -96,14 +105,19 @@
                 {% if topk_concepts %}
                     <thead class="table-dark">
                         <tr>
-                            <th scope="col">Image name</th>
+                            <th scope="col" style="width: 16.66%">Image name</th>
                             <th scope="col">concepts</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for image_name, concepts in topk_concepts.items() %}
                             <tr>
-                                <th scope="row">{{ image_name }}</th>
+                                <th scope="row" style="width: 16.66%">
+                                    <img src="data:{{images[image_name].type}}};base64,{{images[image_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                                    <span>
+                                        {{ image_name }}
+                                    </span>
+                                </th>
                                 <td>{{ concepts }}</td>
                             </tr>
                         {% endfor %}

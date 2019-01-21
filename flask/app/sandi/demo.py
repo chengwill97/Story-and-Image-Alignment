@@ -75,7 +75,7 @@ class SandiWorkflow:
 
             # Retrieve image names
             with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
-                self.image_names = [line.split('\t').pop(0) for line in f]
+                self.image_names = [line.split('\t').pop(0).encode('ascii', 'replace') for line in f]
         else:
             # Create directory to store results and images
             self.create_data_folder()
@@ -272,37 +272,55 @@ class SandiWorkflow:
 
                 app.logger.debug('Appending {image} to paragraph {para}'.format(image=alignments[i], para=i))
 
-                file_name   = alignments[i]
-                file_path   = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, file_name)
+                result = {'file_name' : alignments[i],
+                          'quote'     : None
+                        }
 
-                """Read in image as base64 string
-                and append to results
+                results.append(result)
+
+                """ Find best quote with best
+                cosine similarity to paragraph
                 """
-                with open(file_path, 'r') as image:
+                if quotes:
 
-                    result = {'file_name'   : file_name,
-                              'data'        : base64.b64encode(image.read()).decode('ascii'),
-                              'type'        : self.mime.from_file(file_path),
-                              'quote'       : None
-                            }
+                    result['quote'] = self.get_best_quote(paragraph, quotes[file_name], quote_used)
 
-                    results.append(result)
-
-                    """ Find best quote with best
-                    cosine similarity to paragraph
-                    """
-                    if quotes:
-
-                        result['quote'] = self.get_best_quote(paragraph, quotes[file_name], quote_used)
-
-                        app.logger.debug('Appending quote {quote} with {file_name} to \
-                                          paragraphs {i}'.format(quote=result['quote'],
-                                                                 file_name=result['file_name'],
-                                                                 i=i))
+                    app.logger.debug('Appending quote {quote} with {file_name} to \
+                                        paragraphs {i}'.format(quote=result['quote'],
+                                                                file_name=result['file_name'],
+                                                                i=i))
 
         app.logger.info('Finished aligning images and texts')
 
         return results
+
+    def get_images(self):
+        """Returns dictionary that maps
+        file name to image content
+
+        Returns:
+            dict: map of image names to images
+        """
+        app.logger.info('Starting to load in images')
+
+        images = dict()
+
+        """Read in image as base64 string
+        and append to results
+        """
+        for image_name in self.image_names:
+            image_info = dict()
+            image_path = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, image_name)
+
+            with open(image_path, 'r') as image:
+                images[image_name] = {
+                    'data'      : base64.b64encode(image.read()).decode('ascii'),
+                    'type'      : self.mime.from_file(image_path),
+                }
+
+        app.logger.info('Finished loading in images')
+
+        return images
 
     def get_quotes(self):
         """Runs quote suggestion applicaiton
