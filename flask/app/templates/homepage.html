@@ -10,7 +10,13 @@
         <!-- Input form for images -->
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <span class="input-group-text">Images</span>
+                <span class="input-group-text">
+                    Images &nbsp;
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only accepts files of type 'image/jpeg' or 'image/png'">
+                    </i>
+                </span>
             </div>
             <div class="custom-file">
                 <input type="file" name="images" class="custom-file-input"
@@ -28,7 +34,13 @@
         <!-- Input form for text files -->
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <span class="input-group-text">Text</span>
+                <span class="input-group-text">
+                    Text &nbsp;
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only accepts plain text files">
+                    </i>
+                </span>
             </div>
             <div class="custom-file">
                 <input type="file" name="text_files" class="custom-file-input"
@@ -116,7 +128,15 @@
 
         <!-- Check box to indicate number of images to use -->
         <div class="form-group row align-items-center">
-            <label for="include_num_images" class="col-sm-3 col-form-label">Number of Images to Include</label>
+            <div class="col-sm-3">
+                <span>
+                    Number of Images to Include
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only include this number of images in the final results.">
+                    </i>
+                </span>
+            </div>
             <div class="col-sm-2">
                 <input class="form-control form-control-sm" type="number" value="" min="0" max="9001" step="1"
                     placeholder="All images" id="include_num_images" name="include_num_images">
