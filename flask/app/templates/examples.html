@@ -3,4 +3,16 @@
 
     <h1 class="display-4">Examples Page Coming Soon!</h1>
 
+    <div class="btn-toolbar" role="toolbar" aria-label="Group examples">
+        <div class="btn-group mr-2" role="group" aria-label="examples">
+            {% for examples_folder in examples_folders %}
+                {% if examples_id == examples_folder %}
+                    <button type="button" class="btn btn-primary">{{ examples_folder }}</button>
+                {% else %}
+                    <button type="button" class="btn btn-secondary">{{ examples_folder }}</button>
+                {% endif %}
+            {% endfor%}
+        </div>
+    </div>
+
 {% endblock %}

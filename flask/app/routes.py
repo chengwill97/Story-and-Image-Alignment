@@ -49,8 +49,8 @@ def initServer():
     global yolo_resources, scene_resources, quote_resources, glove_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
-    quote_resources = SandiWorkflow.load_quote_resources()
-    glove_resources = SandiWorkflow.load_glove_resources()
+    quote_resources = None #SandiWorkflow.load_quote_resources()
+    glove_resources = None #SandiWorkflow.load_glove_resources()
 
     app.logger.info('Server set up')
 
@@ -61,13 +61,40 @@ def index():
     Returns:
         template: template of home page
     """
-
     app.logger.info('Starting new session')
 
     # Start new session by clearing previous session variables
     session.clear()
 
     return render_template('homepage.html')
+
+@app.route('/examples/', defaults={'examples_id': None}, methods=['GET', 'POST'])
+@app.route('/examples/<examples_id>', methods=['GET', 'POST'])
+def examples(examples_id):
+    """Examples page of sandi web app
+
+    Returns:
+        template: template of examples page
+    """
+    examples_path = os.environ['EXAMPLES_PATH']
+    examples_folders = list()
+
+    # Get list of examples in directory of examples
+    examples_folders = [example for example in os.listdir(examples_path)
+                        if os.path.isdir(os.path.join(examples_path, example))]
+
+    app.logger.debug(examples_folders)
+
+    if not examples_id:
+        try:
+            examples_id = examples_folders[0]
+        except IndexError:
+            pass
+
+    app.logger.info('Returning template of example {examples_id}'.format(examples_id=examples_id))
+
+    return render_template('examples.html', examples_id=examples_id, num_examples=len(examples_folders),
+                            examples_folders=examples_folders)
 
 @app.route('/demo/imagesMissingTags', methods=['GET', 'POST'])
 def images_missing_tags():
@@ -76,7 +103,6 @@ def images_missing_tags():
     Returns:
         template: template to get more tags
     """
-
     folder              = None
     file_names          = list()
     images_missing_tags = list()
@@ -92,6 +118,7 @@ def images_missing_tags():
     except:
         pass
 
+    # Read image data
     for file_name in file_names:
         file_path = os.path.join(folder, SandiWorkflow.IMAGES_FOLDER, file_name)
 
@@ -122,7 +149,7 @@ def demo():
     tags                = dict()
     cosine_similarities = dict()
     topk_concepts       = dict()
-    quotes              = None
+    quotes              = dict()
     folder              = session.pop('folder', None)
     num_images          = session.pop('num_images', 0)
     num_texts           = session.pop('num_texts', 0)
@@ -144,10 +171,16 @@ def demo():
 
     app.logger.debug('Session contains folder: {folder}'.format(folder=folder))
 
+    """Handles start of a new session
+    including extracting images and text
+    from the user input as well as other
+    input, i.e. checkboxes and ranges.
+    """
     if folder == None:
-
-        # Gather and save images and text files
+        # Gather and save images
         num_images = demo.collect_uploaded_images(request.files.getlist('images'))
+
+        # Gather and text
         if 'use_text' in request.form:
             num_texts = demo.collect_uploaded_text(request.form.get('text', ''))
         else:
@@ -159,7 +192,9 @@ def demo():
         except Exception:
             request_num_images = num_images
 
+        # Default to number of images uploaded if num_images out of range
         num_images = min(request_num_images, num_images)
+
         demo.num_images = num_images
 
         app.logger.debug('User requests to have {request_num_images} images, \
@@ -170,6 +205,7 @@ def demo():
         # Get tags from yolo and caffe
         images_missing_tags = demo.run_tags()
 
+        # Fill in session information for manuel tag entry
         if images_missing_tags:
             app.logger.info('Could not retrieve tags for some images')
 
@@ -201,10 +237,12 @@ def demo():
     a randomized order of images and texts
     """
     try:
+        # Gather results then analysis of said results
         results             = demo.get_optimized_alignments(quotes=quotes)
         cosine_similarities = demo.get_cosine_similarities()
         topk_concepts       = demo.get_topk_concepts()
     except Exception as e:
+        # Randomize results in case of exception
         app.logger.warn(e)
         traceback.print_exc()
         results = demo.get_randomized_alignments(quotes=quotes)
@@ -226,7 +264,3 @@ def demo():
                             tags=tags,
                             cosine_similarities=cosine_similarities,
                             topk_concepts=topk_concepts)
-
-@app.route('/examples', methods=['GET', 'POST'])
-def examples():
-    return render_template('examples.html')
