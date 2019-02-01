@@ -1,0 +1,1 @@
+{"korea.jpg":["a","one","countries","wave","crowds"],"korea-2.jpg":["a","food","fashion","media","music"],"korea-1.jpg":["a","flashy","military","weapon","choice"]}
