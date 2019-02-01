@@ -3,11 +3,12 @@
 
     <h1 class="display-4">Examples Page Coming Soon!</h1>
 
+    <!-- Group buttons to each example -->
     <div class="btn-toolbar" role="toolbar" aria-label="Group examples">
         <div class="btn-group mr-2" role="group" aria-label="examples">
 
             <form action="{{ url_for('examples') }}" method="post">
-                <button type="submit" class="btn btn-secondary">Examples</button>
+                <button type="submit" class="btn btn-light">Examples</button>
             </form>
 
             {% for examples_folder in examples_folders %}
@@ -15,12 +16,31 @@
                     {% if examples_id == examples_folder %}
                         <button type="submit" class="btn btn-primary">{{ examples_folder }}</button>
                     {% else %}
-                        <button type="submit" class="btn btn-secondary">{{ examples_folder }}</button>
+                        <button type="submit" class="btn btn-light">{{ examples_folder }}</button>
                     {% endif %}
                 </form>
             {% endfor%}
 
         </div>
     </div>
+
+    <br>
+
+    <div class = "row">
+    
+        {% for image in images %}
+            
+            <div class = "col-sm-6 col-md-3">
+                <a href = "#" class = "thumbnail">
+                    <img src="data:{{image.type}}};base64,{{image.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                </a>
+                <p style="font-size: 1em; text-align: center;"> {{ image.file_name }} </p>
+            </div>
+
+        {% endfor%}
+            
+    </div>
+
+    <div>{{ text }}</div>
 
 {% endblock %}

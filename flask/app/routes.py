@@ -76,8 +76,11 @@ def examples(examples_id):
     Returns:
         template: template of examples page
     """
-    examples_path = os.environ['EXAMPLES_PATH']
+    examples_path    = os.environ['EXAMPLES_PATH']
     examples_folders = list()
+    images           = list()
+    text             = ''
+    mime             = Magic(mime=True)
 
     # Get list of examples in directory of examples
     examples_folders = [example for example in os.listdir(examples_path)
@@ -91,10 +94,26 @@ def examples(examples_id):
         except IndexError:
             pass
 
+    # Read in images from examples folder
+    images_path = os.path.join(examples_path, examples_id, SandiWorkflow.IMAGES_FOLDER)
+
+    for file_name in os.listdir(images_path):
+        file_path = os.path.join(images_path, file_name)
+
+        with open(file_path, 'r') as image:
+            images.append({'file_name'  : file_name,
+                           'data'       : base64.b64encode(image.read()).decode('ascii'),
+                           'type'       : mime.from_file(file_path)
+                            })
+
+    # Read in text from examples folder
+    with open(os.path.join(examples_path, examples_id, SandiWorkflow.FILENAME_TEXT), 'r') as f:
+        text = ' '.join([line.decode('utf8').split('\t').pop() for line in f])
+
     app.logger.info('Returning template of example {examples_id}'.format(examples_id=examples_id))
 
     return render_template('examples.html', examples_id=examples_id, num_examples=len(examples_folders),
-                            examples_folders=examples_folders)
+                            examples_folders=examples_folders, images=images, text=text)
 
 @app.route('/demo/imagesMissingTags', methods=['GET', 'POST'])
 def images_missing_tags():
