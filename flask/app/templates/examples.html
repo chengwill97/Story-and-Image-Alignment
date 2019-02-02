@@ -12,7 +12,7 @@
             </form>
 
             {% for examples_folder in examples_folders %}
-                <form action="{{ url_for('examples', examples_id=examples_folder) }}" method="get">
+                <form action="{{ url_for('examples', examples_id=examples_folder) }}" method="post">
                     {% if examples_id == examples_folder %}
                         <button type="submit" class="btn btn-primary">{{ examples_folder }}</button>
                     {% else %}
@@ -24,23 +24,88 @@
         </div>
     </div>
 
+    <hr>
+
     <br>
 
-    <div class = "row">
-    
-        {% for image in images %}
-            
-            <div class = "col-sm-6 col-md-3">
-                <a href = "#" class = "thumbnail">
-                    <img src="data:{{image.type}}};base64,{{image.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
-                </a>
-                <p style="font-size: 1em; text-align: center;"> {{ image.file_name }} </p>
+    <form method="post" id="examples_form" action="{{ url_for('examples_process') }}" enctype="multipart/form-data">
+
+        <div class = "row">
+
+            {% for image in images %}
+
+                <div class = "col-md-3">
+                    <a href = "#" class = "thumbnail">
+                        <img src="data:{{image.type}}};base64,{{image.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                    </a>
+                    <div class="form-check" style="text-align: center;">
+                        <input class="form-check-input" name="{{ image.file_name }}" type="checkbox" id="{{ image.file_name }}" checked>
+                        <label class="form-check-label" for="{{ image.file_name }}">
+                                {{ image.file_name }}
+                        </label>
+                    </div>
+                </div>
+
+            {% endfor%}
+
+        </div>
+
+        <br>
+
+        <!-- Input form for text files -->
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">
+                    Text &nbsp;
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only accepts plain text files">
+                    </i>
+                </span>
             </div>
+            <div class="custom-file">
+                <input type="file" name="text_files" class="custom-file-input"
+                        id="text_files" accept="text/plain" multiple>
+                <label class="custom-file-label" for="text_files">Choose text</label>
+            </div>
+        </div>
 
-        {% endfor%}
-            
-    </div>
+        <!-- Display text file names -->
+        <div class="scrollContainer">
+            <ul class="list-group textNameScroll" id="textNames">
+            </ul>
+        </div>
 
-    <div>{{ text }}</div>
+        <!-- Check box to use input text instead -->
+        <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Input Text
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Check this to use text box input instead of text files">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-2">
+                <div class="form-check">
+                    <input class="form-check-input" name="use_text" type="checkbox" id="use_text" checked>
+                    <label class="form-check-label" for="use_text">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input form for text -->
+        <div class="form-group">
+            <textarea class="form-control" name="text" id="text" rows="10">{{ text }}</textarea>
+        </div>
+
+        <!-- Submit button -->
+        <button type="submit" value="Upload" form="examples_form" class="btn btn-primary" id="show" multiple>Make my post!</button>
+
+    </form>
+
 
 {% endblock %}

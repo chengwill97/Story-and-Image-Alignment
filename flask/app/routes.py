@@ -19,6 +19,7 @@ from flask import request
 from flask import session
 
 from magic import Magic
+from shutil import copy2
 
 from app import app
 
@@ -68,6 +69,7 @@ def index():
 
     return render_template('homepage.html')
 
+
 @app.route('/examples/', defaults={'examples_id': None}, methods=['GET', 'POST'])
 @app.route('/examples/<examples_id>', methods=['GET', 'POST'])
 def examples(examples_id):
@@ -81,6 +83,9 @@ def examples(examples_id):
     images           = list()
     text             = ''
     mime             = Magic(mime=True)
+
+    # Start new example session
+    session.clear()
 
     # Get list of examples in directory of examples
     examples_folders = [example for example in os.listdir(examples_path)
@@ -108,12 +113,106 @@ def examples(examples_id):
 
     # Read in text from examples folder
     with open(os.path.join(examples_path, examples_id, SandiWorkflow.FILENAME_TEXT), 'r') as f:
-        text = ' '.join([line.decode('utf8').split('\t').pop() for line in f])
+        text = '\n'.join([line.decode('utf8').split('\t').pop() for line in f])
+        app.logger.info(text)
+
+    session['examples_id'] = examples_id
 
     app.logger.info('Returning template of example {examples_id}'.format(examples_id=examples_id))
 
     return render_template('examples.html', examples_id=examples_id, num_examples=len(examples_folders),
                             examples_folders=examples_folders, images=images, text=text)
+
+
+@app.route('/demo/examples/process', methods=['GET', 'POST'])
+def examples_process():
+    """Set up example and
+    redirect to demo
+    """
+    examples_id     = session.get('examples_id', 1)
+    examples_path   = os.environ['EXAMPLES_PATH']
+    examples_folder = os.path.join(examples_path, examples_id)
+    examples_images = os.path.join(examples_folder, SandiWorkflow.IMAGES_FOLDER)
+    demo_folder     = None
+    tags            = dict()
+
+    app.logger.info('Setting up example {examples_id}'.format(examples_id=examples_id))
+
+    if request.method == 'GET':
+        return render_template('index.html')
+
+    # Set up demo from examples resources
+    demo = SandiWorkflow()
+    demo_folder = demo.folder
+    demo_images = os.path.join(demo_folder, SandiWorkflow.IMAGES_FOLDER)
+
+    examples_images = os.path.join(examples_path, examples_id, SandiWorkflow.IMAGES_FOLDER)
+
+    """
+    Copy tags.txt with selected images
+    as well as images over to data folder
+    """
+    with open(os.path.join(examples_folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+        for line in f:
+            line_split = line.split('\t')
+            image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(SandiWorkflow.TAGS_DELIM)])
+            image_name = line_split.pop()
+
+            # Copy image from examples folder to demo folder
+            if image_name in request.form:
+                tags[image_name] = image_tags
+
+                src_path = os.path.join(examples_images, image_name)
+                dst_path = os.path.join(demo_images, image_name)
+
+                copy2(src_path, dst_path)
+
+    # Copy tags with images that were selected
+    with open(os.path.join(demo_folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
+        for file_name, image_tags in tags.items():
+
+            new_tags = SandiWorkflow.TAGS_DELIM.join(image_tags) or SandiWorkflow.TAGS_DELIM
+
+            f.write('{file_name}\t{tags}\n'
+                    .format(file_name=file_name, tags=new_tags))
+
+    # Gather and text
+    if 'use_text' in request.form:
+        num_texts = demo.collect_uploaded_text(request.form.get('text', ''))
+    else:
+        num_texts  = demo.collect_uploaded_text_files(request.files.getlist('text_files'))
+
+    num_images = len(tags)
+
+    # Retrieve the number of images to include in the alignment
+    try:
+        request_num_images = int(request.form.get('include_num_images', num_images))
+    except Exception:
+        request_num_images = num_images
+
+    # Default to number of images uploaded if num_images out of range
+    num_images = min(request_num_images, num_images)
+
+    demo.num_images = num_images
+
+    app.logger.debug('User requests to have {request_num_images} images, and application set to have {num_images} images'
+                        .format(request_num_images=request_num_images,
+                                num_images=num_images))
+
+    """Set appropriate session
+    variables for demo route
+    """
+    session['folder']              = demo.folder
+    session['num_images']          = num_images
+    session['num_texts']           = num_texts
+    session['include_quotes']      = 'include_quotes' in request.form
+    session['space_images_evenly'] = 'space_images_evenly' in request.form
+    session['from_example']        = True
+
+    app.logger.info('Example {examples_id}'.format(examples_id=examples_id))
+
+    return redirect(url_for('demo'))
+
 
 @app.route('/demo/imagesMissingTags', methods=['GET', 'POST'])
 def images_missing_tags():
@@ -153,6 +252,7 @@ def images_missing_tags():
     return render_template('images_missing_tags.html',
                             images_missing_tags=images_missing_tags)
 
+
 @app.route('/demo/results', methods=['GET', 'POST'])
 def demo():
     """Page with results of sandi demo
@@ -174,8 +274,9 @@ def demo():
     num_texts           = session.pop('num_texts', 0)
     include_quotes      = session.pop('include_quotes', 'include_quotes' in request.form)
     space_images_evenly = session.pop('space_images_evenly', 'space_images_evenly' in request.form)
+    from_example        = session.pop('from_example', False)
 
-    if request.method == 'GET':
+    if request.method == 'GET' and not from_example:
         return render_template('demo.html', num_images=0, num_texts=0,
                                 results=results)
 
@@ -216,8 +317,7 @@ def demo():
 
         demo.num_images = num_images
 
-        app.logger.debug('User requests to have {request_num_images} images, \
-                          and application set to have {num_images} images'
+        app.logger.debug('User requests to have {request_num_images} images, and application set to have {num_images} images'
                          .format(request_num_images=request_num_images,
                                  num_images=num_images))
 
@@ -237,7 +337,7 @@ def demo():
             return redirect(url_for('images_missing_tags',
                                     images_missing_tags=images_missing_tags))
 
-    else:
+    elif not from_example:
         app.logger.info('Gathering tags from user')
 
         # Get new tags here
