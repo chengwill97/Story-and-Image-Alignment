@@ -1,0 +1,3 @@
+korea.jpg	handbag, person, traffic_light, umbrella, seoul
+korea-2.jpg	person, suitcase, handbag, millennial, backpack, shoppers
+korea-1.jpg	person, cyberpunk, suitcase, handbag, tvmonitor, chair, aesthetic
