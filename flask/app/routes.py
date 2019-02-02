@@ -111,7 +111,6 @@ def examples(examples_id):
     # Read in text from examples folder
     with open(os.path.join(examples_path, examples_id, SandiWorkflow.FILENAME_TEXT), 'r') as f:
         text = '\n'.join([line.decode('utf8').split('\t').pop() for line in f])
-        app.logger.info(text)
 
     session['examples_id'] = examples_id
 
