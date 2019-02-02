@@ -4,7 +4,6 @@ import json
 import shutil
 import base64
 import random
-import base64
 
 import cv2
 import numpy as np
@@ -50,8 +49,8 @@ def initServer():
     global yolo_resources, scene_resources, quote_resources, glove_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
-    quote_resources = None #SandiWorkflow.load_quote_resources()
-    glove_resources = None #SandiWorkflow.load_glove_resources()
+    quote_resources = SandiWorkflow.load_quote_resources()
+    glove_resources = SandiWorkflow.load_glove_resources()
 
     app.logger.info('Server set up')
 
@@ -129,7 +128,7 @@ def examples_process():
     """Set up example and
     redirect to demo
     """
-    examples_id     = session.get('examples_id', 1)
+    examples_id     = session.get('examples_id', '')
     examples_path   = os.environ['EXAMPLES_PATH']
     examples_folder = os.path.join(examples_path, examples_id)
     examples_images = os.path.join(examples_folder, SandiWorkflow.IMAGES_FOLDER)

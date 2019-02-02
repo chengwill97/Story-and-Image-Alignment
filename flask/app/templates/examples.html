@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-    <h1 class="display-4">Examples Page Coming Soon!</h1>
+    <h1 class="display-4">Examples Out of the Box</h1>
 
     <!-- Group buttons to each example -->
     <div class="btn-toolbar" role="toolbar" aria-label="Group examples">
@@ -100,6 +100,68 @@
         <!-- Input form for text -->
         <div class="form-group">
             <textarea class="form-control" name="text" id="text" rows="10">{{ text }}</textarea>
+        </div>
+
+        <!-- Check box to include quotes -->
+        <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Include Image Captions
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Quotes are generated from a well known quotes dataset, Quotes-500k">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include_quotes" name="include_quotes">
+                    <label class="form-check-label" for="include_quotes">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check box to space images evenly -->
+        <!-- <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Space images evenly
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Sets option to space images evenly throughout the article">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="space_images_evenly" name="space_images_evenly">
+                    <label class="form-check-label" for="space_images_evenly">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Check box to indicate number of images to use -->
+        <div class="form-group row align-items-center">
+            <div class="col-sm-3">
+                <span>
+                    Number of Images to Include
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only include this number of images in the final results.">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-2">
+                <input class="form-control form-control-sm" type="number" value="" min="0" max="9001" step="1"
+                    placeholder="All images" id="include_num_images" name="include_num_images">
+            </div>
+            <div class="col-sm-12">
+                <small id="numberImages" class="form-text text-muted">Leave blank to automatically use up to all images</small>
+            </div>
         </div>
 
         <!-- Submit button -->
