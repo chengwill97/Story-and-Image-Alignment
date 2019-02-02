@@ -266,8 +266,6 @@ class SandiWorkflow:
         for i, paragraph in enumerate(paragraphs):
             results.append(paragraph)
 
-            app.logger.debug('Appending paragraph {}'.format(i))
-
             if i in alignments:
 
                 app.logger.debug('Appending {image} to paragraph {para}'.format(image=alignments[i], para=i))
