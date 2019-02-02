@@ -1,7 +1,6 @@
 import os
 import io
 import json
-import shutil
 import base64
 import random
 
@@ -18,7 +17,6 @@ from flask import request
 from flask import session
 
 from magic import Magic
-from shutil import copy2
 
 from app import app
 
@@ -49,8 +47,8 @@ def initServer():
     global yolo_resources, scene_resources, quote_resources, glove_resources
     yolo_resources  = SandiWorkflow.load_yolo_resources()
     scene_resources = SandiWorkflow.load_scene_resources()
-    quote_resources = SandiWorkflow.load_quote_resources()
-    glove_resources = SandiWorkflow.load_glove_resources()
+    quote_resources = None #SandiWorkflow.load_quote_resources()
+    glove_resources = None #SandiWorkflow.load_glove_resources()
 
     app.logger.info('Server set up')
 
@@ -164,7 +162,7 @@ def examples_process():
                 src_path = os.path.join(examples_images, image_name)
                 dst_path = os.path.join(demo_images, image_name)
 
-                copy2(src_path, dst_path)
+                os.link(src_path, dst_path)
 
     # Copy tags with images that were selected
     with open(os.path.join(demo_folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
