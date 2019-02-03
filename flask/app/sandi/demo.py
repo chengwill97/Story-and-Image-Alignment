@@ -270,7 +270,9 @@ class SandiWorkflow:
 
                 app.logger.debug('Appending {image} to paragraph {para}'.format(image=alignments[i], para=i))
 
-                result = {'file_name' : alignments[i],
+                file_name = alignments[i]
+
+                result = {'file_name' : file_name,
                           'quote'     : None
                         }
 
