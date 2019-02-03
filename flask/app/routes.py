@@ -87,6 +87,7 @@ def examples(examples_id):
     # Get list of examples in directory of examples
     examples_folders = [example for example in os.listdir(examples_path)
                         if os.path.isdir(os.path.join(examples_path, example))]
+    examples_folders.sort(key=int)
 
     app.logger.debug(examples_folders)
 
