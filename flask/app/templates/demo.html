@@ -27,6 +27,9 @@
         <!-- Start of Story Tab -->
         <div class="tab-pane fade show active" id="nav-story" role="tabpanel" aria-labelledby="nav-story-tab">
             {% for result in results %}
+
+                <p> {{ result.paragraph }} </p>
+
                 {% if result.file_name %}
 
                     <img src="data:{{images[result.file_name].type}}};base64,{{images[result.file_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;">
@@ -37,9 +40,8 @@
                         <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
                     {% endif %}
 
-                {% else %}
-                    <p> {{ result }} </p>
                 {% endif %}
+
             {% endfor %}
 
             {% if results %}

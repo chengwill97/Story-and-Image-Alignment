@@ -249,7 +249,6 @@ class SandiWorkflow:
         Returns:
             list: aligned text and images
         """
-
         app.logger.info('Aligning images and texts')
 
         paragraphs  = list()
@@ -264,7 +263,13 @@ class SandiWorkflow:
         that are aligned that paragraph
         """
         for i, paragraph in enumerate(paragraphs):
-            results.append(paragraph)
+
+            result = {'paragraph' : paragraph,
+                      'file_name' : None,
+                      'quote'     : None
+                    }
+
+            results.append(result)
 
             if i in alignments:
 
@@ -272,11 +277,7 @@ class SandiWorkflow:
 
                 file_name = alignments[i]
 
-                result = {'file_name' : file_name,
-                          'quote'     : None
-                        }
-
-                results.append(result)
+                result['file_name'] = file_name
 
                 """ Find best quote with best
                 cosine similarity to paragraph
