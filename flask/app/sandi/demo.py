@@ -398,7 +398,20 @@ class SandiWorkflow:
         app.logger.info('Starting to retrieve cosine similarities between text and images')
 
         cosine_similarities      = dict()
+        alignments               = dict()
         cosine_similarities_path = os.path.join(self.folder, 'cosine.txt')
+        alignment_path           = os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)
+
+        # Check that alignment file exists
+        if not os.path.exists(alignment_path):
+            raise Exception('file "{path}" does not exist' \
+                .format(path=alignment_path))
+
+        # Read alignments from alignments.txt
+        with open(alignment_path) as f:
+            for line in f:
+                align = line.split('\n')[0].split('\t')
+                alignments[int(align[0])-1] = align[1]
 
         try:
             with open(cosine_similarities_path) as f:
@@ -413,17 +426,26 @@ class SandiWorkflow:
                 cosine_similarities[image_name] = list()
                 indices = sorted(para_cosine_map.keys(), key=lambda para: int(para))
                 for indice in indices:
-                    cosine = para_cosine_map[indice]
-                    color  = self.cosine_to_256(cosine)
-                    red    = 255 - color
-                    green  = color
-                    blue   = 0
+                    cosine  = para_cosine_map[indice]
+                    color   = self.cosine_to_256(cosine)
+                    red     = 255 - color
+                    green   = color
+                    blue    = 0
+                    aligned = False
 
-                    cosine_similarities[image_name].append(
-                        {'cosine' : '{0:.3f}'.format(cosine),
-                         'color'  : '#{0:02x}{1:02x}{2:02x}'.format(red, green, blue)
-                        }
-                    )
+                    try:
+                        if image_name == alignments[int(indice)-1]:
+                            aligned = True
+                    except KeyError:
+                        pass
+
+                    cosine_similarity = {
+                        'cosine'  : '{0:.3f}'.format(cosine),
+                        'color'   : '#{0:02x}{1:02x}{2:02x}'.format(red, green, blue),
+                        'aligned' : aligned
+                    }
+
+                    cosine_similarities[image_name].append(cosine_similarity)
 
         except IOError as e:
             app.logger.warn('Cosine similarities path DNE: {path}'.format(path=cosine_similarities_path))

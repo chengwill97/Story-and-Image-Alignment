@@ -93,7 +93,11 @@
                                     </span>
                                 </th>
                                 {% for cosine in cosines %}
-                                    <td style="background: {{ cosine.color }}">{{ cosine.cosine }}</td>
+                                    {% if cosine.aligned %}
+                                        <td style="background: {{ cosine.color }}; border: 3px solid red">{{ cosine.cosine }}</td>
+                                    {% else %}
+                                        <td style="background: {{ cosine.color }}">{{ cosine.cosine }}</td>
+                                    {% endif %}
                                 {% endfor %}
                             </tr>
                         {% endfor %}
