@@ -126,7 +126,7 @@ class SandiWorkflow:
                 union_tags = set()
 
                 try:
-                    union_tags.update(yolo_tags[file_name])
+                    union_tags.update([tag.encode('ascii', 'replace') for tag in yolo_tags[file_name]])
                 except KeyError:
                     pass
 
@@ -136,7 +136,7 @@ class SandiWorkflow:
                 #     pass
 
                 try:
-                    union_tags.update(google_tags[file_name])
+                    union_tags.update([tag.encode('ascii', 'replace') for tag in google_tags[file_name]])
                 except KeyError:
                     pass
 
