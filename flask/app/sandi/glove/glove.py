@@ -13,23 +13,25 @@ class GloveVectors:
     DIMENSION = int(os.environ['DIMENSION'])
     GLOVE_DEFAULT_MODEL = os.environ['GLOVE_DEFAULT_MODEL']
 
-    def __init__(self, df):
-        self.df = df
+    def __init__(self, model):
+        self.model = model
 
     @staticmethod
     def load_resources():
         """Loads in the glove vectors
         """
-        df = None
+        model      = dict()
         glove_path = GloveVectors.GLOVE_DEFAULT_MODEL
-        if os.path.exists(glove_path):
-            df = pd.read_csv(glove_path,
-                                header=None,
-                                sep=' ',
-                                quoting=csv.QUOTE_NONE
-                                ).set_index(0)
 
-        return df
+        if os.path.exists(glove_path):
+            with open(glove_path, 'r') as glove_file:
+                for line in glove_file:
+                    word_vector = line.split()
+                    word = word_vector.pop(0)
+                    vector = np.array([float(val) for val in word_vector])
+                    model[word] = vector
+
+        return model
 
     def cosine(self, A, B):
         """Computes the cosine similarity of vectors A and B
@@ -86,7 +88,7 @@ class GloveVectors:
         vec = np.zeros(GloveVectors.DIMENSION)
         for token in tokens:
             try:
-                vec += self.df.loc[token]
+                vec += self.model[token]
             except KeyError:
                 pass
 
@@ -145,7 +147,7 @@ class GloveVectors:
             # acquire the vector representation of the word
             vec = array(df.iloc[i])
             # calculate the cosine similarity
-            cos_sim = cosine(myvec, vec)
+            cos_sim = self.cosine(myvec, vec)
             # append the cosine similarity of the word and the word siteself to the list
             cos_words.append([cos_sim, words[i]])
 

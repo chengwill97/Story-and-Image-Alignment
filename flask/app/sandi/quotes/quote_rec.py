@@ -33,7 +33,7 @@ class Quotes:
         self.quotes_resources = quotes_resources
         self.detokenizer = Detok()
 
-    def run(self, filenames, images_dir):
+    def run(self, filenames, k, images_dir):
         """Runs Quote suggestion application
 
         Runs Quote suggestino application and gathers quotes for each image
@@ -55,7 +55,7 @@ class Quotes:
         for filename in filenames:
             image = os.path.join(images_dir, filename)
             quotes = demo.retrieve_captions(model, net, captions,
-                                            vectors, image, k=10)
+                                            vectors, image, k=k)
 
             quote_recs[filename] = [self.detokenize(quote) for quote in quotes]
 

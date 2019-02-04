@@ -350,7 +350,7 @@ class SandiWorkflow:
         Returns:
             dict: {file name: [quote1, quote2, ...], ...}
         """
-        quotes = self.quote.run(self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        quotes = self.quote.run(self.image_names, self.num_images, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         return quotes
 
