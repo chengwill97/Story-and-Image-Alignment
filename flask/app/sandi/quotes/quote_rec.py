@@ -88,7 +88,7 @@ class Quotes:
         """
         app.logger.debug('Loading quote reccomendation resources')
 
-        net = demo.build_convnet(path_to_vgg=Quotes.VSC_VGG)
+        net = demo.build_convnet(Quotes.VSC_VGG)
         model = tools.load_model(path_to_model=Quotes.VSC_DEFAULT_MODEL)
         captions = datasets.load_dataset(name=Quotes.VSC_DATASET_NAME, path_to_data=Quotes.VSC_RESOURCES)[Quotes.DEV][Quotes.CAPTIONS]
         vectors = tools.encode_sentences(model, captions, verbose=False)

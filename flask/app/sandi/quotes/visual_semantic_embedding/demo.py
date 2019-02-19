@@ -19,7 +19,9 @@ from PIL import Image
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-import tools
+from app import app
+
+from app.sandi.quotes.visual_semantic_embedding import tools
 
 #-----------------------------------------------------------------------------#
 # Specify VGG-19 convnet location here
@@ -110,7 +112,7 @@ def regularities(model, net, captions, imvecs, file_name, negword, posword, k=5,
         sentences = [sentences[a] for a in sargs[:k]]
         sorted_args = [sorted_args[a] for a in sargs[:k]]
 
-    return sentences, sorted_args[:k]    
+    return sentences, sorted_args[:k]
 
 def compute_fromfile(net, loc, base_path='/ais/gobi3/u/rkiros/coco/images/val2014/'):
     """
@@ -126,7 +128,7 @@ def compute_fromfile(net, loc, base_path='/ais/gobi3/u/rkiros/coco/images/val201
     feats = numpy.zeros((len(imagelist), 4096), dtype='float32')
 
     for minibatch in range(numbatches):
-        print minibatch * batchsize
+        # print minibatch * batchsize
         idx = inds[minibatch::numbatches]
         batch = [imagelist[i] for i in idx]
         ims = numpy.zeros((len(idx), 3, 224, 224), dtype='float32')
@@ -134,9 +136,9 @@ def compute_fromfile(net, loc, base_path='/ais/gobi3/u/rkiros/coco/images/val201
             ims[j] = load_image(batch[j])
         fc7 = compute_features(net, ims)
         feats[idx] = fc7
-         
+
     return feats
-    
+
 def load_image(file_name):
     """
     Load and preprocess an image
@@ -158,12 +160,12 @@ def load_image(file_name):
     # Central crop to 224x224
     h, w, _ = im.shape
     im = im[h//2-112:h//2+112, w//2-112:w//2+112]
-    
+
     rawim = numpy.copy(im).astype('uint8')
-    
+
     # Shuffle axes to c01
     im = numpy.swapaxes(numpy.swapaxes(im, 1, 2), 0, 1)
-    
+
     # Convert to BGR
     im = im[::-1, :, :]
 
@@ -177,11 +179,11 @@ def compute_features(net, im):
     fc7 = numpy.array(lasagne.layers.get_output(net['fc7'], im, deterministic=True).eval())
     return fc7
 
-def build_convnet(path_to_vgg=''):
+def build_convnet(path_to_vgg):
     """
     Construct VGG-19 convnet
     """
-    print 'Building model...'
+    app.logger.info('Building model...')
     net = {}
     net['input'] = InputLayer((None, 3, 224, 224))
     net['conv1_1'] = ConvLayer(net['input'], 64, 3, pad=1)
@@ -210,7 +212,8 @@ def build_convnet(path_to_vgg=''):
     net['fc8'] = DenseLayer(net['fc7'], num_units=1000, nonlinearity=None)
     net['prob'] = NonlinearityLayer(net['fc8'], softmax)
 
-    print 'Loading parameters...'
+    app.logger.info('Loading parameters...')
+
     output_layer = net['prob']
     model = pkl.load(open(path_to_vgg))
     lasagne.layers.set_all_param_values(output_layer, model['param values'])
