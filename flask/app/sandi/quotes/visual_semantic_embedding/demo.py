@@ -23,12 +23,6 @@ from app import app
 
 from app.sandi.quotes.visual_semantic_embedding import tools
 
-#-----------------------------------------------------------------------------#
-# Specify VGG-19 convnet location here
-#-----------------------------------------------------------------------------#
-path_to_vgg = '/home/willc97/dev/visual_semantic_embedding/vgg19.pkl'
-#-----------------------------------------------------------------------------#
-
 def retrieve_captions(model, net, captions, cvecs, file_name, k=5):
     """
     Retrieve captions for a given image

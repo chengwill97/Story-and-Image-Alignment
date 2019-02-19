@@ -3,8 +3,8 @@ Evaluation code for multimodal-ranking
 """
 import numpy
 
-from datasets import load_dataset
-from tools import encode_sentences, encode_images
+from app.sandi.quotes.visual_semantic_embedding.datasets import load_dataset
+from app.sandi.quotes.visual_semantic_embedding.tools import encode_sentences, encode_images
 
 def evalrank(model, data, split='dev'):
     """

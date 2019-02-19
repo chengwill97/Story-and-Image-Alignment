@@ -20,13 +20,7 @@ from app.sandi.quotes.visual_semantic_embedding.model import init_params
 from app.sandi.quotes.visual_semantic_embedding.model import build_sentence_encoder
 from app.sandi.quotes.visual_semantic_embedding.model import build_image_encoder
 
-#-----------------------------------------------------------------------------#
-# Specify model location here
-#-----------------------------------------------------------------------------#
-default_model = '/home/willc97/dev/visual_semantic_embedding/coco.npz'
-#-----------------------------------------------------------------------------#
-
-def load_model(path_to_model):
+def load_model(dictionary_path, model_options, model_path):
     """
     Load all model components
     """
@@ -34,26 +28,26 @@ def load_model(path_to_model):
     worddict = dict()
     options = dict()
 
-    app.logger.info('Loading dictionary {model}'.format(path_to_model))
+    app.logger.info('Loading dictionary {}'.format(dictionary_path))
 
-    with open(path_to_model, 'rb') as f:
+    with open(dictionary_path, 'rb') as f:
         worddict = pkl.load(f)
 
     app.logger.info('Creating inverted dictionary...')
 
-    word_idict = {v: k for k, v in my_map.iteritems()}
+    word_idict = {v: k for k, v in worddict.iteritems()}
     word_idict[0] = '<eos>'
     word_idict[1] = 'UNK'
 
-    app.logger.info('Loading model options')
+    app.logger.info('Loading model options {}'.format(model_options))
 
-    with open('%s.pkl'%path_to_model, 'rb') as f:
+    with open(model_options, 'rb') as f:
         options = pkl.load(f)
 
     app.logger.info('Loading model parameters')
 
     params = init_params(options)
-    params = load_params(path_to_model, params)
+    params = load_params(model_path, params)
     tparams = init_tparams(params)
 
     app.logger.info('Compiling sentence encoder')
@@ -67,7 +61,7 @@ def load_model(path_to_model):
     f_ienc = theano.function([im], images, name='f_ienc')
 
     # Store everything we need in a dictionary
-    app.logger.info('Packing up {model}'.format(path_to_model))
+    app.logger.info('Packing up {}'.format(model_path))
 
     model = dict()
     model['options'] = options

@@ -7,6 +7,8 @@ import numpy
 
 from collections import OrderedDict
 
+from app import app
+
 def zipp(params, tparams):
     """
     Push parameters to Theano shared variables
@@ -25,7 +27,7 @@ def unzip(zipped):
 
 def itemlist(tparams):
     """
-    Get the list of parameters. 
+    Get the list of parameters.
     Note that tparams must be OrderedDict
     """
     return [vv for kk, vv in tparams.iteritems()]
@@ -52,7 +54,7 @@ def load_params(path, params):
     pp = numpy.load(path)
     for kk, vv in params.iteritems():
         if kk not in pp:
-            warnings.warn('%s is not in the archive'%kk)
+            app.logger.warn('%s is not in the archive'%kk)
             continue
         params[kk] = pp[kk]
     return params
