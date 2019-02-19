@@ -5,7 +5,9 @@ from nltk.tokenize.treebank import TreebankWordDetokenizer as Detok
 
 from app import app
 
-from app.sandi.quotes.visual_semantic_embedding import (demo, tools, datasets)
+from app.sandi.quotes.visual_semantic_embedding import demo
+from app.sandi.quotes.visual_semantic_embedding import tools
+from app.sandi.quotes.visual_semantic_embedding import datasets
 
 class Quotes:
     """Runs the quote reccomendation application
@@ -13,16 +15,11 @@ class Quotes:
     Returns:
         None
     """
-    VSC_RESOURCES       = os.environ['VSC_RESOURCES']
-    VSC_DEFAULT_MODEL   = os.environ['VSC_DEFAULT_MODEL']
+    VSC_CAPTIONS        = os.environ['VSC_CAPTIONS']
     VSC_VGG             = os.environ['VSC_VGG']
-    VSC_DATASET_NAME    = os.environ['VSC_DATASET_NAME']
-
-    TRAIN   = 0
-    DEV     = 1
-    TEST    = 2
-
-    CAPTIONS = 0
+    VSC_MODEL           = os.environ['VSC_MODEL']
+    VSC_DICTIONARY      = os.environ['VSC_DICTIONARY']
+    VSC_MODEL_OPTIONS   = os.environ['VSC_MODEL_OPTIONS']
 
     def __init__(self, quotes_resources):
         """Initializes resources for quote reccomendation
@@ -88,9 +85,10 @@ class Quotes:
         """
         app.logger.debug('Loading quote reccomendation resources')
 
-        net = demo.build_convnet(path_to_vgg=Quotes.VSC_VGG)
-        model = tools.load_model(path_to_model=Quotes.VSC_DEFAULT_MODEL)
-        captions = datasets.load_dataset(name=Quotes.VSC_DATASET_NAME, path_to_data=Quotes.VSC_RESOURCES)[Quotes.DEV][Quotes.CAPTIONS]
+        captions = datasets.load_captions(Quotes.VSC_CAPTIONS)
+        net = demo.build_convnet(Quotes.VSC_VGG)
+        model = tools.load_model(Quotes.VSC_DICTIONARY, Quotes.VSC_MODEL_OPTIONS, Quotes.VSC_MODEL)
+
         vectors = tools.encode_sentences(model, captions, verbose=False)
 
         return (model, net, captions, vectors)
