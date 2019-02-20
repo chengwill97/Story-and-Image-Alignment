@@ -17,14 +17,14 @@ import homogeneous_data
 
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-from utils import *
-from layers import get_layer, param_init_fflayer, fflayer, param_init_gru, gru_layer
-from optim import adam
-from model import init_params, build_model, build_sentence_encoder, build_image_encoder
-from vocab import build_dictionary
-from evaluation import i2t, t2i
-from tools import encode_sentences, encode_images
-from datasets import load_dataset
+from app.sandi.quotes.visual_semantic_embedding.utils import *
+from app.sandi.quotes.visual_semantic_embedding.layers import get_layer, param_init_fflayer, fflayer, param_init_gru, gru_layer
+from app.sandi.quotes.visual_semantic_embedding.optim import adam
+from app.sandi.quotes.visual_semantic_embedding.model import init_params, build_model, build_sentence_encoder, build_image_encoder
+from app.sandi.quotes.visual_semantic_embedding.vocab import build_dictionary
+from app.sandi.quotes.visual_semantic_embedding.evaluation import i2t, t2i
+from app.sandi.quotes.visual_semantic_embedding.tools import encode_sentences, encode_images
+from app.sandi.quotes.visual_semantic_embedding.datasets import load_dataset
 
 # main trainer
 def trainer(data='coco',  #f8k, f30k, coco
@@ -159,7 +159,7 @@ def trainer(data='coco',  #f8k, f30k, coco
     uidx = 0
     curr = 0.
     n_samples = 0
-    
+
     for eidx in xrange(max_epochs):
 
         print 'Epoch ', eidx

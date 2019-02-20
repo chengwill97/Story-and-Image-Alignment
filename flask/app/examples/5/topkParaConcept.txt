@@ -1,0 +1,1 @@
+{"mor-1920x1080.jpg":["a","famous"],"maorii-1920x1080.jpg":["a","youtube"],"fire-1.jpg":["a","study","clear","semester"]}

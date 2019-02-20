@@ -11,63 +11,65 @@ import numpy
 from collections import OrderedDict, defaultdict
 from scipy.linalg import norm
 
-from utils import load_params, init_tparams
-from model import init_params, build_sentence_encoder, build_image_encoder
+from app import app
 
-#-----------------------------------------------------------------------------#
-# Specify model location here
-#-----------------------------------------------------------------------------#
-default_model = '/home/willc97/dev/visual_semantic_embedding/coco.npz'
-#-----------------------------------------------------------------------------#
+from app.sandi.quotes.visual_semantic_embedding.utils import load_params
+from app.sandi.quotes.visual_semantic_embedding.utils import init_tparams
 
-def load_model(path_to_model=default_model):
+from app.sandi.quotes.visual_semantic_embedding.model import init_params
+from app.sandi.quotes.visual_semantic_embedding.model import build_sentence_encoder
+from app.sandi.quotes.visual_semantic_embedding.model import build_image_encoder
+
+def load_model(dictionary_path, model_options, model_path):
     """
     Load all model components
     """
-    print path_to_model
 
-    # Load the worddict
-    print 'Loading dictionary...'
-    with open('%s.dictionary.pkl'%path_to_model, 'rb') as f:
+    worddict = dict()
+    options = dict()
+
+    app.logger.info('Loading dictionary {}'.format(dictionary_path))
+
+    with open(dictionary_path, 'rb') as f:
         worddict = pkl.load(f)
 
-    # Create inverted dictionary
-    print 'Creating inverted dictionary...'
-    word_idict = dict()
-    for kk, vv in worddict.iteritems():
-        word_idict[vv] = kk
+    app.logger.info('Creating inverted dictionary...')
+
+    word_idict = {v: k for k, v in worddict.iteritems()}
     word_idict[0] = '<eos>'
     word_idict[1] = 'UNK'
 
-    # Load model options
-    print 'Loading model options...'
-    with open('%s.pkl'%path_to_model, 'rb') as f:
+    app.logger.info('Loading model options {}'.format(model_options))
+
+    with open(model_options, 'rb') as f:
         options = pkl.load(f)
 
-    # Load parameters
-    print 'Loading model parameters...'
+    app.logger.info('Loading model parameters')
+
     params = init_params(options)
-    params = load_params(path_to_model, params)
+    params = load_params(model_path, params)
     tparams = init_tparams(params)
 
-    # Extractor functions
-    print 'Compiling sentence encoder...'
+    app.logger.info('Compiling sentence encoder')
+
     trng = RandomStreams(1234)
     trng, [x, x_mask], sentences = build_sentence_encoder(tparams, options)
     f_senc = theano.function([x, x_mask], sentences, name='f_senc')
 
-    print 'Compiling image encoder...'
+    app.logger.info('Compiling image encoder')
     trng, [im], images = build_image_encoder(tparams, options)
     f_ienc = theano.function([im], images, name='f_ienc')
 
     # Store everything we need in a dictionary
-    print 'Packing up...'
-    model = {}
+    app.logger.info('Packing up {}'.format(model_path))
+
+    model = dict()
     model['options'] = options
     model['worddict'] = worddict
     model['word_idict'] = word_idict
     model['f_senc'] = f_senc
     model['f_ienc'] = f_ienc
+
     return model
 
 def encode_sentences(model, X, verbose=False, batch_size=128):
@@ -90,7 +92,7 @@ def encode_sentences(model, X, verbose=False, batch_size=128):
     # Get features. This encodes by length, in order to avoid wasting computation
     for k in ds.keys():
         if verbose:
-            print k
+            app.logger.debug(k)
         numbatches = len(ds[k]) / batch_size + 1
         for minibatch in range(numbatches):
             caps = ds[k][minibatch::numbatches]
@@ -104,7 +106,7 @@ def encode_sentences(model, X, verbose=False, batch_size=128):
             for idx, s in enumerate(seqs):
                 x[:k,idx] = s
                 x_mask[:k+1,idx] = 1.
-            
+
             ff = model['f_senc'](x, x_mask)
             for ind, c in enumerate(caps):
                 features[c] = ff[ind]

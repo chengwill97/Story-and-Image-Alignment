@@ -3,42 +3,157 @@
 
     <h1 class="display-4" id="top">Your Story and Images are Aligned!</h1>
 
-    {% if num_images %}
-        <button type="button" class="btn btn-info">Images <span class="badge badge-light">{{ num_images }}</span></button>
-    {% else %}
-        <button type="button" class="btn btn-secondary">Images <span class="badge badge-light">{{ num_images }}</span></button>
-    {% endif %}
-
-    {% if num_texts %}
-        <button type="button" class="btn btn-info">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
-    {% else %}
-        <button type="button" class="btn btn-secondary">Paragraphs <span class="badge badge-light">{{ num_texts }}</span></button>
-    {% endif %}
-
-    <br>
-    <br>
-
-    <a href="{{ url_for('index') }}" class="btn btn-primary" role="button">Create Another Article</a>
+    <nav>
+        <div class="nav nav-pills mb-3" id="nav-tab" role="tablist">
+            <a class="nav-item nav-link active" id="nav-story-tab" data-toggle="tab"
+                href="#nav-story" role="tab" aria-controls="nav-story" aria-selected="true">
+                Your Story
+            </a>
+            <a class="nav-item nav-link" id="analysis-tab" data-toggle="tab"
+                href="#analysis" role="tab" aria-controls="analysis" aria-selected="false">
+                Story Analysis
+            </a>
+            <a class="btn btn-success nav-item nav-link ml-auto" id="create-tab"
+                href="{{ url_for('index') }}" role="button">
+                Create Another Article
+            </a>
+        </div>
+    </nav>
 
     <hr>
 
-    {% for result in results %}
-        {% if result.type %}
-            <img src="data:{{result.type}}};base64,{{result.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;"><br>
+    <div class="tab-content" id="nav-tabContent">
 
-            {% if result.quote %}
-                <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
+        <!-- Start of Story Tab -->
+        <div class="tab-pane fade show active" id="nav-story" role="tabpanel" aria-labelledby="nav-story-tab">
+            {% for result in results %}
+
+                <p> {{ result.paragraph }} </p>
+
+                {% if result.file_name %}
+
+                    <img src="data:{{images[result.file_name].type}}};base64,{{images[result.file_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 40%;">
+
+                    <br>
+
+                    {% if result.quote %}
+                        <p style="font-size: 0.7em; text-align: center;"> {{ result.quote }} </p>
+                    {% endif %}
+
+                {% endif %}
+
+            {% endfor %}
+
+            {% if results %}
+                <hr>
+
+                <a href="#top" class="btn btn-primary" role="button">Back to Top</a>
+            {% endif %}
+        </div>
+        <!-- End of Story Tab -->
+
+        <!-- Start of Analysis Tab -->
+        <div class="tab-pane fade" id="analysis" role="tabpanel" aria-labelledby="analysis-tab">
+
+            {% if num_images %}
+                <button type="button" class="btn btn-outline-info">Images <span class="badge badge-info">{{ num_images }}</span></button>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary">Images <span class="badge badge-info">{{ num_images }}</span></button>
             {% endif %}
 
-        {% else %}
-            <p> {{ result }} </p>
-        {% endif %}
-    {% endfor %}
+            {% if num_texts %}
+                <button type="button" class="btn btn-outline-info">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary">Paragraphs <span class="badge badge-info">{{ num_texts }}</span></button>
+            {% endif %}
 
-    {% if results %}
-        <hr>
+            <br>
+            <br>
 
-        <a href="#top" class="btn btn-primary" role="button">Back to Top</a>
-    {% endif %}
+            <h2 class="display-5" id="top">Cosine Similarities</h2>
+
+            <table class="table table-bordered table-light">
+                {% if cosine_similarities %}
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col" style="width: 16.66%">Image name</th>
+                            {% for text_index in range(1, num_texts+1) %}
+                                <th scope="col"><span>Para. {{ text_index }}</span></th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for image_name, cosines in cosine_similarities.items() %}
+                            <tr>
+                                <th scope="row" style="width: 16.66%">
+
+                                    <img src="data:{{images[image_name].type}}};base64,{{images[image_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                                    <span>
+                                        {{ image_name }}
+                                    </span>
+                                </th>
+                                {% for cosine in cosines %}
+                                    <!-- Highlight box if aligned -->
+                                    {% if cosine.aligned %}
+                                        <!-- Find text for aligned paragraph -->
+                                        {% for result in results %}
+                                            {% if result.file_name == image_name %}
+                                                <td style="background: {{ cosine.color }}; border: 3px solid red"
+                                                    data-toggle="tooltip" data-placement="right" title="{{ result.paragraph }}">
+                                                    {{ cosine.cosine }}
+                                                </td>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <td style="background: {{ cosine.color }}">{{ cosine.cosine }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                {% else %}
+                    <thead class="table-dark">
+                        <tr><th scope="col">No cosine similarities are available</th></tr>
+                    </thead>
+                {% endif %}
+            </table>
+
+            <br>
+
+            <h2 class="display-5" id="top">Top Concepts Alignments</h2>
+
+            <table class="table table-bordered table-light">
+                {% if topk_concepts %}
+                    <thead class="table-dark">
+                        <tr>
+                            <th scope="col" style="width: 16.66%">Image name</th>
+                            <th scope="col">Text Concepts</th>
+                            <th scope="col">Image Tags</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for image_name, concepts in topk_concepts.items() %}
+                            <tr>
+                                <th scope="row" style="width: 16.66%">
+                                    <img src="data:{{images[image_name].type}}};base64,{{images[image_name].data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                                    <span>
+                                        {{ image_name }}
+                                    </span>
+                                </th>
+                                <td>{{ concepts }}</td>
+                                <td>{{ tags[image_name] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                {% else %}
+                    <thead class="table-dark">
+                        <tr><th scope="col">No concepts are available</th></tr>
+                    </thead>
+                {% endif %}
+            </table>
+
+        </div>
+        <!-- End of Analysis Tab -->
+    </div>
 
 {% endblock %}

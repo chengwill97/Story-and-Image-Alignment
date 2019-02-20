@@ -9,8 +9,8 @@ import numpy
 from collections import OrderedDict
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-from utils import _p, ortho_weight, norm_weight, xavier_weight, tanh, l2norm
-from layers import get_layer, param_init_fflayer, fflayer, param_init_gru, gru_layer
+from app.sandi.quotes.visual_semantic_embedding.utils import _p, ortho_weight, norm_weight, xavier_weight, tanh, l2norm
+from app.sandi.quotes.visual_semantic_embedding.layers import get_layer, param_init_fflayer, fflayer, param_init_gru, gru_layer
 
 def init_params(options):
     """
@@ -50,7 +50,7 @@ def contrastive_loss(margin, im, s):
 
     return cost_s.sum() + cost_im.sum()
 
-def build_model(tparams, options):                                                                                           
+def build_model(tparams, options):
     """
     Computation graph for the model
     """
@@ -130,7 +130,7 @@ def build_image_encoder(tparams, options):
     # Encode images
     images = get_layer('ff')[1](tparams, im, options, prefix='ff_image', activ='linear')
     images = l2norm(images)
-    
+
     return trng, [im], images
 
 

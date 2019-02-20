@@ -6,7 +6,7 @@ import theano.tensor as tensor
 
 import numpy
 
-from utils import _p, ortho_weight, norm_weight, xavier_weight, tanh, linear
+from app.sandi.quotes.visual_semantic_embedding.utils import _p, ortho_weight, norm_weight, xavier_weight, tanh, linear
 
 # layers: 'name': ('parameter initializer', 'feedforward')
 layers = {'ff': ('param_init_fflayer', 'fflayer'),

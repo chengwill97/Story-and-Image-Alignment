@@ -1,0 +1,5 @@
+bkk-market-1024x536.jpg	person, floating, bowl, market
+bkk-temples.jpg	person, umbrella, palace, boat, grand
+bkk.jpg	machine
+people-.jpg	person, old, man
+thai.jpg	bangkok, person, chair, bowl

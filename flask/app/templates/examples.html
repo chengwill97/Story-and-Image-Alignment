@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <h1 class="display-4">Examples Out of the Box</h1>
+
+    <!-- Group buttons to each example -->
+    <div class="btn-toolbar" role="toolbar" aria-label="Group examples">
+        <div class="btn-group mr-2" role="group" aria-label="examples">
+
+            <form action="{{ url_for('examples') }}" method="post">
+                <button type="submit" class="btn btn-light">Examples</button>
+            </form>
+
+            {% for examples_folder in examples_folders %}
+                <form action="{{ url_for('examples', examples_id=examples_folder) }}" method="post">
+                    {% if examples_id == examples_folder %}
+                        <button type="submit" class="btn btn-primary">{{ examples_folder }}</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-light">{{ examples_folder }}</button>
+                    {% endif %}
+                </form>
+            {% endfor%}
+
+        </div>
+    </div>
+
+    <hr>
+
+    <br>
+
+    <form method="post" id="examples_form" action="{{ url_for('examples_process') }}" enctype="multipart/form-data">
+
+        <div class = "row">
+
+            {% for image in images %}
+
+                <div class = "col-md-3">
+                    <a href = "#" class = "thumbnail">
+                        <img src="data:{{image.type}}};base64,{{image.data}}" style="display: block; margin-left: auto; margin-right: auto; width: 100%;">
+                    </a>
+                    <div class="form-check" style="text-align: center;">
+                        <input class="form-check-input" name="{{ image.file_name }}" type="checkbox" id="{{ image.file_name }}" checked>
+                        <label class="form-check-label" for="{{ image.file_name }}">
+                                {{ image.file_name }}
+                        </label>
+                    </div>
+                </div>
+
+            {% endfor%}
+
+        </div>
+
+        <br>
+
+        <!-- Input form for text files -->
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">
+                    Text &nbsp;
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only accepts plain text files">
+                    </i>
+                </span>
+            </div>
+            <div class="custom-file">
+                <input type="file" name="text_files" class="custom-file-input"
+                        id="text_files" accept="text/plain" multiple>
+                <label class="custom-file-label" for="text_files">Choose text</label>
+            </div>
+        </div>
+
+        <!-- Display text file names -->
+        <div class="scrollContainer">
+            <ul class="list-group textNameScroll" id="textNames">
+            </ul>
+        </div>
+
+        <!-- Check box to use input text instead -->
+        <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Input Text
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Check this to use text box input instead of text files">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-2">
+                <div class="form-check">
+                    <input class="form-check-input" name="use_text" type="checkbox" id="use_text" checked>
+                    <label class="form-check-label" for="use_text">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input form for text -->
+        <div class="form-group">
+            <textarea class="form-control" name="text" id="text" rows="10">{{ text }}</textarea>
+        </div>
+
+        <!-- Check box to include quotes -->
+        <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Caption My Images!
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Quotes are generated from a well known quotes dataset, Quotes-500k">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include_quotes" name="include_quotes">
+                    <label class="form-check-label" for="include_quotes">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Check box to space images evenly -->
+        <!-- <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Space images evenly
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Sets option to space images evenly throughout the article">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="space_images_evenly" name="space_images_evenly">
+                    <label class="form-check-label" for="space_images_evenly">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Check box to indicate number of images to use -->
+        <div class="form-group row align-items-center">
+            <div class="col-sm-3">
+                <span>
+                    Number of Images to Include
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only include this number of images in the final results.">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-2">
+                <input class="form-control form-control-sm" type="number" value="" min="0" max="9001" step="1"
+                    placeholder="All images" id="include_num_images" name="include_num_images">
+            </div>
+            <div class="col-sm-12">
+                <small id="numberImages" class="form-text text-muted">Leave blank to automatically use up to all images</small>
+            </div>
+        </div>
+
+        <!-- Submit button -->
+        <button type="submit" value="Upload" form="examples_form" class="btn btn-primary" id="show" multiple>Make my post!</button>
+
+    </form>
+
+    <br>
+
+    <!-- Loading Screen -->
+    <div class="loading">
+        <img id="loadinggif" src="{{url_for('static', filename='img/shuffle.gif')}}" alt="Cool Loading Gif">
+        <h4 id="loadingtext" class="display-8">Creating Your Story</h4>
+    </div>
+
+
+{% endblock %}

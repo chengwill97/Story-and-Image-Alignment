@@ -10,10 +10,17 @@
         <!-- Input form for images -->
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <span class="input-group-text">Images</span>
+                <span class="input-group-text">
+                    Images &nbsp;
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only accepts files of type 'image/jpeg' or 'image/png'">
+                    </i>
+                </span>
             </div>
             <div class="custom-file">
-                <input type="file" name="images" class="custom-file-input" id="inputImages" multiple>
+                <input type="file" name="images" class="custom-file-input"
+                       id="inputImages" accept="image/png, image/jpeg" multiple>
                 <label class="custom-file-label" for="inputImages">Choose images</label>
             </div>
         </div>
@@ -24,14 +31,21 @@
             </ul>
         </div>
 
-        <!-- Input form for text -->
+        <!-- Input form for text files -->
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <span class="input-group-text">Text</span>
+                <span class="input-group-text">
+                    Text &nbsp;
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only accepts plain text files">
+                    </i>
+                </span>
             </div>
             <div class="custom-file">
-                <input type="file" name="texts" class="custom-file-input" id="inputText" multiple>
-                <label class="custom-file-label" for="inputText">Choose text</label>
+                <input type="file" name="text_files" class="custom-file-input"
+                       id="text_files" accept="text/plain" multiple>
+                <label class="custom-file-label" for="text_files">Choose text</label>
             </div>
         </div>
 
@@ -41,11 +55,46 @@
             </ul>
         </div>
 
+        <!-- Check box to use input text instead -->
+        <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Input Text
+                    <i class="far fa-question-circle"
+                       data-toggle="tooltip" data-placement="right"
+                       title="Check this to use text box input instead of text files">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-2">
+                <div class="form-check">
+                    <input class="form-check-input" name="use_text" type="checkbox" id="use_text">
+                    <label class="form-check-label" for="use_text">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input form for text -->
+        <div class="form-group">
+            <!-- <label for="inputTextOnly">Input Text. Place new line in between each paragraph</label> -->
+            <textarea class="form-control" name="text" id="text" rows="5"></textarea>
+        </div>
+
         <br>
 
         <!-- Check box to include quotes -->
         <div class="form-group row">
-            <div class="col-sm-3">Include Image Captions</div>
+            <div class="col-sm-3">
+                <span>
+                    Caption My Images!
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Quotes are generated from a well known quotes dataset, Quotes-500k">
+                    </i>
+                </span>
+            </div>
             <div class="col-sm-9">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="include_quotes" name="include_quotes">
@@ -56,9 +105,38 @@
             </div>
         </div>
 
+        <!-- Check box to space images evenly -->
+        <!-- <div class="form-group row">
+            <div class="col-sm-3">
+                <span>
+                    Space images evenly
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Sets option to space images evenly throughout the article">
+                    </i>
+                </span>
+            </div>
+            <div class="col-sm-9">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="space_images_evenly" name="space_images_evenly">
+                    <label class="form-check-label" for="space_images_evenly">
+                        Include
+                    </label>
+                </div>
+            </div>
+        </div> -->
+
         <!-- Check box to indicate number of images to use -->
         <div class="form-group row align-items-center">
-            <label for="include_num_images" class="col-sm-3 col-form-label">Number of Images to Include</label>
+            <div class="col-sm-3">
+                <span>
+                    Number of Images to Include
+                    <i class="far fa-question-circle"
+                        data-toggle="tooltip" data-placement="right"
+                        title="Only include this number of images in the final results.">
+                    </i>
+                </span>
+            </div>
             <div class="col-sm-2">
                 <input class="form-control form-control-sm" type="number" value="" min="0" max="9001" step="1"
                     placeholder="All images" id="include_num_images" name="include_num_images">

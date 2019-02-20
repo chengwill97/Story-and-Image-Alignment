@@ -7,18 +7,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+import models.Analysis;
 import util.FileLines;
 
 public class ExtractPhrases {
+	
+	private final static Logger LOGGER = Logger.getLogger(ExtractPhrases.class.getName());
 
 	public static MaxentTagger tagger = new MaxentTagger(); // Standford POS Tagger requirement
 	public static String next="";
 	
-	public ExtractPhrases(String postagger) {
+	public ExtractPhrases(String postagger_path) {
 		
-		tagger = new MaxentTagger(postagger);
+		LOGGER.info("Starting to get postagger from " + postagger_path);
+		
+		tagger = new MaxentTagger(postagger_path);
+		
+		LOGGER.info("Finished retrieved postagger from " + postagger_path);
 	}
 	
 	public static Set<String> returnNounPhrases(String text){
