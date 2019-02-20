@@ -1,0 +1,3 @@
+highline-cs1.jpg	building, person, commercial
+cluny.jpg	blind, person, chair, window, cup
+cookshop-cs.jpg	umbrella, bench, cookshop, person, bottle, nyc, chair
