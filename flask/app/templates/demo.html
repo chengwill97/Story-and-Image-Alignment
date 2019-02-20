@@ -93,8 +93,17 @@
                                     </span>
                                 </th>
                                 {% for cosine in cosines %}
+                                    <!-- Highlight box if aligned -->
                                     {% if cosine.aligned %}
-                                        <td style="background: {{ cosine.color }}; border: 3px solid red">{{ cosine.cosine }}</td>
+                                        <!-- Find text for aligned paragraph -->
+                                        {% for result in results %}
+                                            {% if result.file_name == image_name %}
+                                                <td style="background: {{ cosine.color }}; border: 3px solid red"
+                                                    data-toggle="tooltip" data-placement="right" title="{{ result.paragraph }}">
+                                                    {{ cosine.cosine }}
+                                                </td>
+                                            {% endif %}
+                                        {% endfor %}
                                     {% else %}
                                         <td style="background: {{ cosine.color }}">{{ cosine.cosine }}</td>
                                     {% endif %}
