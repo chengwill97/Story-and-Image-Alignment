@@ -159,7 +159,7 @@ public class ILPBased {
 			/* Add constraint: for each image i, sum_t X_it <=1; t = 1:number of paragraphs
 			 * each image can appear only once in the article. This is a trivial assumption - regular blog posts do not contain the same image multiple times
 			 */
-			for(int img = 1; img <= numImages; img ++){
+			for(int img = 1; img <= imageName_tags.size(); img ++){
 				expr = new GRBLinExpr();
 				for(int t = 1; t <= numParas; t ++){
 					expr.addTerm(1, X[img-1][t-1]);
@@ -177,7 +177,7 @@ public class ILPBased {
 			 */
 			for(int t = 1; t <= numParas; t++){
 				expr = new GRBLinExpr();
-				for(int img = 1; img <= numImages; img ++){
+				for(int img = 1; img <= imageName_tags.size(); img ++){
 					expr.addTerm(1, X[img-1][t-1]);
 				}
 				try{
@@ -192,7 +192,7 @@ public class ILPBased {
 			// selection constraint
 			expr = new GRBLinExpr();
 			for(int t = 1; t <= numParas; t++){				
-				for(int img = 1; img <= numImages; img ++){
+				for(int img = 1; img <= imageName_tags.size(); img ++){
 					expr.addTerm(1, X[img-1][t-1]);
 				}
 			}
