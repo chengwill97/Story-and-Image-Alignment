@@ -75,7 +75,7 @@ def examples(examples_id):
     Returns:
         template: template of examples page
     """
-    examples_path    = os.environ['EXAMPLES_PATH']
+    examples_path    = os.path.join(os.getcwd(), os.environ['EXAMPLES_PATH'])
     examples_folders = list()
     images           = list()
     text             = ''
