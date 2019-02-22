@@ -32,7 +32,7 @@ def initServer():
     """
     app.logger.info('Setting up server')
 
-    temp_data_path = os.path.abspath(os.environ['TEMP_DATA_PATH'])
+    temp_data_path = app.config.get('TEMP_DATA_PATH')
 
     app.logger.debug('Setting up data directory {}'.format(temp_data_path))
 
@@ -75,7 +75,7 @@ def examples(examples_id):
     Returns:
         template: template of examples page
     """
-    examples_path    = os.path.join(os.getcwd(), os.environ['EXAMPLES_PATH'])
+    examples_path    = app.config.get('EXAMPLES_PATH')
     examples_folders = list()
     images           = list()
     text             = ''
@@ -127,7 +127,7 @@ def examples_process():
     redirect to demo
     """
     examples_id     = session.get('examples_id', '')
-    examples_path   = os.environ['EXAMPLES_PATH']
+    examples_path   = app.config.get('EXAMPLES_PATH')
     examples_folder = os.path.join(examples_path, examples_id)
     examples_images = os.path.join(examples_folder, SandiWorkflow.IMAGES_FOLDER)
     demo_folder     = None

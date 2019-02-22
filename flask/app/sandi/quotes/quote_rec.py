@@ -15,11 +15,11 @@ class Quotes:
     Returns:
         None
     """
-    VSC_CAPTIONS        = os.environ['VSC_CAPTIONS']
-    VSC_VGG             = os.environ['VSC_VGG']
-    VSC_MODEL           = os.environ['VSC_MODEL']
-    VSC_DICTIONARY      = os.environ['VSC_DICTIONARY']
-    VSC_MODEL_OPTIONS   = os.environ['VSC_MODEL_OPTIONS']
+    VSC_CAPTIONS        = app.config.get('VSC_CAPTIONS')
+    VSC_VGG             = app.config.get('VSC_VGG')
+    VSC_MODEL           = app.config.get('VSC_MODEL')
+    VSC_DICTIONARY      = app.config.get('VSC_DICTIONARY')
+    VSC_MODEL_OPTIONS   = app.config.get('VSC_MODEL_OPTIONS')
 
     def __init__(self, quotes_resources):
         """Initializes resources for quote reccomendation
