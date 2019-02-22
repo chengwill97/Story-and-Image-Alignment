@@ -8,10 +8,12 @@ from math import sqrt
 import nltk
 nltk.download('punkt')
 
+from app import app
+
 class GloveVectors:
 
-    DIMENSION = int(os.environ['DIMENSION'])
-    GLOVE_DEFAULT_MODEL = os.environ['GLOVE_DEFAULT_MODEL']
+    DIMENSION = int(app.config.get('DIMENSION'))
+    GLOVE_DEFAULT_MODEL = app.config.get('GLOVE_DEFAULT_MODEL')
 
     def __init__(self, model):
         self.model = model

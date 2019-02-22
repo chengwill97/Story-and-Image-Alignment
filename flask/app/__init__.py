@@ -1,16 +1,32 @@
 import os
+import logging
+
 from dotenv import load_dotenv
 
 from flask import Flask
 
-# set environment variables
-APP_ROOT = os.path.join(os.path.dirname(__file__), '..')
-dotenv_path = os.path.join(APP_ROOT, '.env')
-load_dotenv(dotenv_path)
-
-TEMP_DATA_PATH = os.environ['TEMP_DATA_PATH']
-
 app = Flask(__name__)
-app.secret_key = os.environ['DEV_SECRET_KEY']
+
+env = os.environ.get('FLASK_ENV') or env = 'Development'
+
+log_level = os.environ.get('LOG_LEVEL') or logging.DEBUG
+
+app.logger.setLevel(int(log_level))
+
+try:
+
+    app.config.from_object('app.config.{env}'.format(env=env))
+
+except ImportError:
+
+    app.logger.warn('Environment {env} not found'.format(env=env))
+    app.logger.warn('Defaulting to Development environment')
+
+    app.config.from_object('app.config.{default_env}'.format(default_env='Development'))
+
+except Exception as e:
+
+    app.logger.warn('Environment {env} not found'.format(env=env))
+    app.logger.warn(e)
 
 from app import routes

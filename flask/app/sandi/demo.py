@@ -28,13 +28,13 @@ class SandiWorkflow:
     Returns:
         None
     """
-    SANDI_ALIGNMENT_URI  = os.environ['SANDI_ALIGNMENT_URI']
-    TEMP_DATA_PATH       = os.environ['TEMP_DATA_PATH']
-    FILENAME_TAGS        = os.environ['FILENAME_TAGS']
-    FILENAME_TEXT        = os.environ['FILENAME_TEXT']
-    FILENAME_ALIGN       = os.environ['FILENAME_ALIGN']
-    TAGS_DELIM           = os.environ['TAGS_DELIM']
-    IMAGES_FOLDER        = os.environ['IMAGES_FOLDER']
+    SANDI_ALIGNMENT_URI  = app.config.get('SANDI_ALIGNMENT_URI')
+    TEMP_DATA_PATH       = app.config.get('TEMP_DATA_PATH')
+    FILENAME_TAGS        = app.config.get('FILENAME_TAGS')
+    FILENAME_TEXT        = app.config.get('FILENAME_TEXT')
+    FILENAME_ALIGN       = app.config.get('FILENAME_ALIGN')
+    TAGS_DELIM           = app.config.get('TAGS_DELIM')
+    IMAGES_FOLDER        = app.config.get('IMAGES_FOLDER')
 
     def __init__(self, folder=None, num_images=0, num_texts=0,
                  yolo_resources=None, scene_resources=None, quote_resources=None,

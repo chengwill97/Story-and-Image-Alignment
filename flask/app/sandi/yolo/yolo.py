@@ -9,8 +9,8 @@ class Yolo:
     Returns:
         None
     """
-    MODEL  = os.environ['YOLO_MODEL_NAME']
-    THRESH = float(os.environ['YOLO_THRESH'])
+    MODEL  = app.config.get('YOLO_MODEL_NAME')
+    THRESH = float(app.config.get('YOLO_THRESH'))
 
     def __init__(self, model):
         """Initializes model

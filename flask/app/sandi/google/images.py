@@ -8,6 +8,7 @@ from StringIO import StringIO
 
 from multiprocessing.dummy import Pool as ThreadPool
 
+from app import app
 
 class ImageSearch:
     """Finds image descriptions from
@@ -17,8 +18,8 @@ class ImageSearch:
         None
     """
 
-    SEARCH_BY_IMAGE_URL = os.environ['SEARCH_BY_IMAGE_URL']
-    USER_AGENT          = os.environ['USER_AGENT']
+    SEARCH_BY_IMAGE_URL = app.config.get('SEARCH_BY_IMAGE_URL')
+    USER_AGENT          = app.config.get('USER_AGENT')
 
     def __init__(self):
         self.images_dir  = None

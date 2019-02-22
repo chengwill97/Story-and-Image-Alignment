@@ -12,21 +12,21 @@ from app import app
 
 class SceneDetection:
     """Runs Scene Detection application
-    
+
     Returns:
         None
     """
-    DESIGN = os.environ['SCENE_DETECTION_DESIGN']
-    WEIGHTS = os.environ['SCENE_DETECTION_WEIGHTS']
-    LABELS = os.environ['SCENE_DETECTION_LABELS']
-    NPY = os.environ['SCENE_DETECTION_NPY']
+    DESIGN = app.config.get('SCENE_DETECTION_DESIGN')
+    WEIGHTS = app.config.get('SCENE_DETECTION_WEIGHTS')
+    LABELS = app.config.get('SCENE_DETECTION_LABELS')
+    NPY = app.config.get('SCENE_DETECTION_NPY')
 
     DATA = 'data'
     PROB = 'prob'
 
     def __init__(self, scene_resources):
         """Initializes resources for scene detection
-        
+
         Args:
             scene_resources (tuple): (neural_network, transformer, labels)
         """
@@ -36,25 +36,25 @@ class SceneDetection:
         """Runs scene detection application
 
         Runs scene detection application and gathers tags from results
-        
+
         Args:
             filenames (list): list of filenames
             images_dir (str): path of directory where images are stored
-        
+
         Returns:
             dict: {filename: [tag1, tag2, ...]}
         """
         app.logger.info('Starting scene detection analysis')
-        
+
         net, transformer, labels = self.scene_resources
-        
+
         scene_detection_tags = dict()
-        
+
         for filename in filenames:
 
             image_path = os.path.join(images_dir, filename)
 
-            # im = self.load_image(image_path) 
+            # im = self.load_image(image_path)
             im = caffe.io.load_image(image_path)
 
             # load the image in the data layer
@@ -62,7 +62,7 @@ class SceneDetection:
 
             # compute
             out = net.forward()
-            
+
             top_k = net.blobs['prob'].data[0].flatten().argsort()[-1:-6:-1]
 
             try:
@@ -78,10 +78,10 @@ class SceneDetection:
 
     def load_image(self, image_path):
         """Load in image
-        
+
         Args:
             image_path (str): full path to image
-        
+
         Returns:
             np.array: image as array
         """
@@ -98,7 +98,7 @@ class SceneDetection:
     @staticmethod
     def load_resources():
         """Loads in resources for scene detection
-        
+
         Returns:
             tuple: (neural_network, transformer, labels)
         """
