@@ -205,8 +205,8 @@ public class ILPBased {
 			
 			if (space_images_evenly) {
 				
-				double u = Math.ceil((double)(numParas - 1)/(double)(numImages - 1));
-				double l = Math.floor((double)(numParas + 1)/(double)(numImages + 1));
+				double u = Math.ceil((double)(numParas - 1)/(double)(imageName_tags.size() - 1));
+				double l = Math.floor((double)(numParas + 1)/(double)(imageName_tags.size() + 1));
 				
 				for(int t = 1; t <= numParas-(u-1); t++) {
 					expr = new GRBLinExpr();
