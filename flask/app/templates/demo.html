@@ -77,8 +77,10 @@
                     <thead class="table-dark">
                         <tr>
                             <th scope="col" style="width: 16.66%">Image name</th>
-                            {% for text_index in range(1, num_texts+1) %}
-                                <th scope="col"><span>Para. {{ text_index }}</span></th>
+                            {% for result in results %}
+                                <th scope="col" data-toggle="tooltip" data-placement="top" title="{{ result.paragraph }}">
+                                    <span>Para. {{ loop.index }}</span>
+                                </th>
                             {% endfor %}
                         </tr>
                     </thead>
