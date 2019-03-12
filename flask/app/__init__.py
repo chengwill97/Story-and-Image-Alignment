@@ -1,8 +1,6 @@
 import os
 import logging
 
-from dotenv import load_dotenv
-
 from flask import Flask
 
 app = Flask(__name__)
@@ -22,7 +20,8 @@ except ImportError:
     app.logger.warn('Environment {env} not found'.format(env=env))
     app.logger.warn('Defaulting to Development environment')
 
-    app.config.from_object('app.config.{default_env}'.format(default_env='Development'))
+    app.config.from_object(
+        'app.config.{default_env}'.format(default_env='Development'))
 
 except Exception as e:
 
