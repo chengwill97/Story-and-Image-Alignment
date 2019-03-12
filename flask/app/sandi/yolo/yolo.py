@@ -3,13 +3,14 @@ import lightnet
 
 from app import app
 
+
 class Yolo:
     """Runs the YoloV2 application
 
     Returns:
         None
     """
-    MODEL  = app.config.get('YOLO_MODEL_NAME')
+    MODEL = app.config.get('YOLO_MODEL_NAME')
     THRESH = float(app.config.get('YOLO_THRESH'))
 
     def __init__(self, model):
@@ -47,14 +48,16 @@ class Yolo:
                 lightnet_image = lightnet.Image.from_bytes(image.read())
 
                 # The thresh parameter controls the prediction threshold.
-                # Objects with a detection probability above thresh are returned.
+                # Objects with a detection probability
+                # above thresh are returned.
                 boxes = self.model(lightnet_image, thresh=Yolo.THRESH)
 
                 [tags.add(box[1]) for box in boxes]
 
             yolo_tags[file_name] = tags
 
-            app.logger.debug('Yolo tags {file_name}: {results}'.format(file_name=file_name, results=tags))
+            app.logger.debug('Yolo tags {file_name}: {results}'.format(
+                file_name=file_name, results=tags))
 
         app.logger.info('Finished yolo analysis')
 
