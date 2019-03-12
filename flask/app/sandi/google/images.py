@@ -8,7 +8,6 @@ from StringIO import StringIO
 
 from multiprocessing.dummy import Pool as ThreadPool
 
-from app import app
 
 class ImageSearch:
     """Finds image descriptions from
@@ -19,17 +18,17 @@ class ImageSearch:
     """
 
     SEARCH_BY_IMAGE_URL = app.config.get('SEARCH_BY_IMAGE_URL')
-    USER_AGENT          = app.config.get('USER_AGENT')
+    USER_AGENT = app.config.get('USER_AGENT')
 
     def __init__(self):
-        self.images_dir  = None
+        self.images_dir = None
         self.google_tags = None
 
     def run(self, file_names, images_dir):
 
         app.logger.info('Starting Google Reverse Image Search analysis')
 
-        self.images_dir  = images_dir
+        self.images_dir = images_dir
         self.google_tags = dict()
 
         pool = ThreadPool(min(16, len(file_names)))
@@ -56,7 +55,9 @@ class ImageSearch:
             list: tags for image
         """
 
-        app.logger.info('Getting Google Tags for image {file_name}'.format(file_name=file_name))
+        app.logger.info(
+            'Getting Google Tags for image {file_name}'
+            .format(file_name=file_name))
 
         image_path = os.path.join(self.images_dir, file_name)
 
@@ -72,8 +73,8 @@ class ImageSearch:
             try:
                 # Google search image
                 response = requests.post(ImageSearch.SEARCH_BY_IMAGE_URL,
-                                        files=multipart,
-                                        allow_redirects=False)
+                                         files=multipart,
+                                         allow_redirects=False)
 
                 search_url = response.headers.get('Location')
 
@@ -96,7 +97,8 @@ class ImageSearch:
                 tags = list(map(lambda tag: tag.lower(), tags))
 
             except requests.exceptions.RequestException as e:
-                app.logger.warn('Request to get tags from Google Images failed')
+                app.logger.warn(
+                    'Request to get tags from Google Images failed')
                 app.logger.warn(e)
             except pycurl.error as e:
                 app.logger.warn('Performing pycurl connection failed')
