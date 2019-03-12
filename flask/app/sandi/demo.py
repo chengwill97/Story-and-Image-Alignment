@@ -36,7 +36,7 @@ class SandiWorkflow:
     TAGS_DELIM           = app.config.get('TAGS_DELIM')
     IMAGES_FOLDER        = app.config.get('IMAGES_FOLDER')
 
-    def __init__(self, folder=None, num_images=0, num_texts=0,
+    def __init__(self, folder=None, story_id=None, num_images=0, num_texts=0,
                  yolo_resources=None, scene_resources=None, quote_resources=None,
                  glove_resources=None):
         """Initialization
@@ -53,6 +53,7 @@ class SandiWorkflow:
             (model, neural_net, captions, vectors)
         """
         self.folder             = folder
+        self.story_id           = story_id
         self.alignments         = dict()
         self.image_names        = list()
         self.num_images         = num_images
@@ -71,11 +72,24 @@ class SandiWorkflow:
         app.logger.info('Initiating SANDI pipeline')
 
         if self.folder:
-            app.logger.debug('Retrieving image names')
+            app.logger.debug('Retrieving image names using folder param')
+            self.story_id = os.path.basename(self.folder)
+            # Retrieve image names
+            try:
+                with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+                    self.image_names = [line.split('\t').pop(0) for line in f]
+            except IOError as e:
+                raise e
+        elif self.story_id:
+            app.logger.debug('Retrieving image names using story id param')
+            self.folder = os.path.join(SandiWorkflow.TEMP_DATA_PATH, self.story_id)
 
             # Retrieve image names
-            with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
-                self.image_names = [line.split('\t').pop(0) for line in f]
+            try:
+                with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
+                    self.image_names = [line.split('\t').pop(0) for line in f]
+            except IOError as e:
+                raise e
         else:
             # Create directory to store results and images
             self.create_data_folder()
@@ -344,13 +358,35 @@ class SandiWorkflow:
 
         return images
 
-    def get_quotes(self):
+    def get_quotes(self, include_quotes=None):
         """Runs quote suggestion applicaiton
 
         Returns:
             dict: {file name: [quote1, quote2, ...], ...}
         """
-        quotes = self.quote.run(self.image_names, self.num_images, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+
+        quotes = dict()
+        quotes_path = os.path.join(self.folder, 'quotes.txt')
+
+        try:
+            with open(quotes_path, 'r') as f:
+                quotes = json.load(f)
+        except IOError:
+            app.logger.info('File DNE {quotes_path}'.format(
+                quotes_path=quotes_path))
+        except TypeError:
+            app.logger.info('Error reading file as json: {quotes_path}'.format(
+                quotes_path=quotes_path))
+        finally:
+            if not quotes and include_quotes:
+                quotes = self.quote.run(self.image_names,
+                                        self.num_images,
+                                        os.path.join(self.folder,
+                                                     SandiWorkflow.
+                                                     IMAGES_FOLDER))
+
+                with open(quotes_path, 'w') as f:
+                    json.dump(quotes, f)
 
         return quotes
 
@@ -627,16 +663,15 @@ class SandiWorkflow:
         app.logger.debug('Creating data directory')
 
         self.folder = None
-        folder_ind = 0
+        self.story_id = 0
         while True:
             try:
-                self.folder = os.path.join(SandiWorkflow.TEMP_DATA_PATH, str(folder_ind))
+                self.folder = os.path.join(SandiWorkflow.TEMP_DATA_PATH, str(self.story_id))
                 os.mkdir(self.folder)
                 os.mkdir(os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
                 break
             except OSError:
-                folder_ind += 1
-                pass
+                self.story_id += 1
 
         app.logger.debug('Data directory created at {dir}'.format(dir=self.folder))
 

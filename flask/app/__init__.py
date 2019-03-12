@@ -7,9 +7,9 @@ from flask import Flask
 
 app = Flask(__name__)
 
-env = os.environ.get('FLASK_ENV') or 'Development'
+env = os.environ.get('FLASK_ENV', 'Development')
 
-log_level = os.environ.get('LOG_LEVEL') or logging.DEBUG
+log_level = os.environ.get('LOG_LEVEL', logging.DEBUG)
 
 app.logger.setLevel(int(log_level))
 

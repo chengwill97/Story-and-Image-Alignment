@@ -208,7 +208,7 @@ def examples_process():
 
     app.logger.info('Example {examples_id}'.format(examples_id=examples_id))
 
-    return redirect(url_for('demo'))
+    return redirect(url_for('process_demo'))
 
 
 @app.route('/demo/imagesMissingTags', methods=['GET', 'POST'])
@@ -251,7 +251,7 @@ def images_missing_tags():
 
 
 @app.route('/demo/results', methods=['GET', 'POST'])
-def demo():
+def process_demo():
     """Page with results of sandi demo
 
     Returns:
@@ -342,11 +342,40 @@ def demo():
 
     demo.run_alignment(space_images_evenly=space_images_evenly)
 
-    app.logger.info('Include quotes: {include_quotes}'.format(include_quotes=include_quotes))
+    app.logger.debug('Include quotes: {include_quotes}'.format(include_quotes=include_quotes))
 
-    if include_quotes:
-        # Get reccomended quotes
-        quotes = demo.get_quotes()
+    app.logger.debug('Demo story_id: {story_id}'.format(story_id=demo.story_id))
+
+    # Get reccomended quotes
+    quotes = demo.get_quotes(include_quotes=include_quotes)
+
+    return redirect(url_for('display_story', story_id=demo.story_id))
+
+@app.route('/demo/story', methods=['GET', 'POST'])
+def display_story():
+
+    app.logger.info('Starting to display story')
+
+    results = list()
+    cosine_similarities = dict()
+    topk_concepts = dict()
+    quotes = dict()
+    num_images = 0
+    num_texts = 0
+    story_id = request.args.get('story_id', None)
+
+    app.logger.info('story_id: {story_id}'.format(story_id=story_id))
+
+    if not story_id:
+        return render_template('demo.html', num_images=0, num_texts=0,
+                                results=results)
+
+    demo = SandiWorkflow(story_id=story_id,
+                         quote_resources=quote_resources,
+                         glove_resources=glove_resources)
+
+    # Get reccomended quotes
+    quotes = demo.get_quotes()
 
     """Get optimized images and texts, and
     if alignment somehow fails, we give
@@ -354,9 +383,9 @@ def demo():
     """
     try:
         # Gather results then analysis of said results
-        results             = demo.get_optimized_alignments(quotes=quotes)
+        results = demo.get_optimized_alignments(quotes=quotes)
         cosine_similarities = demo.get_cosine_similarities()
-        topk_concepts       = demo.get_topk_concepts()
+        topk_concepts = demo.get_topk_concepts()
     except Exception as e:
         # Randomize results in case of exception
         app.logger.warn(e)
@@ -364,13 +393,11 @@ def demo():
         results = demo.get_randomized_alignments(quotes=quotes)
 
     images = demo.get_images()
-    tags   = demo.get_tags()
+    tags = demo.get_tags()
+    num_images = len(results)
+    num_texts = sum(1 if result['file_name'] else 0 for result in results)
 
-    app.logger.info('Clearing old session')
-
-    session.clear()
-
-    app.logger.info('Handled Demo Request')
+    app.logger.info('Finished displaying story')
 
     return render_template('demo.html',
                             num_images=num_images,
