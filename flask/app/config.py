@@ -7,6 +7,7 @@ APP_ROOT = os.path.join(os.path.dirname(__file__), '..')
 dotenv_path = os.path.join(APP_ROOT, '.env')
 load_dotenv(dotenv_path)
 
+
 class Config:
     DEBUG = False
     TESTING = False
@@ -52,15 +53,18 @@ class Config:
     SEARCH_BY_IMAGE_URL = os.environ.get('SEARCH_BY_IMAGE_URL')
     USER_AGENT = os.environ.get('USER_AGENT')
 
+
 class Production(Config):
     VSC_CAPTIONS = os.environ.get('VSC_CAPTIONS_PROD')
     SANDI_ALIGNMENT_URI = os.environ.get('SANDI_ALIGNMENT_URI_PROD')
+
 
 class Testing(Config):
     TESTING = True
 
     VSC_CAPTIONS = os.environ.get('VSC_CAPTIONS_DEV')
     SANDI_ALIGNMENT_URI = os.environ.get('SANDI_ALIGNMENT_URI_DEV')
+
 
 class Development(Config):
     DEBUG = True
