@@ -1,5 +1,4 @@
 import os
-import io
 import json
 import shutil
 import random
@@ -7,19 +6,16 @@ import base64
 import requests
 
 from multiprocessing.pool import ThreadPool
-
 from magic import Magic
-import lightnet
-
-from flask import request
 
 from app import app
 
 # from app.sandi.scene_detection.scene365 import SceneDetection
-from app.sandi.yolo.yolo                import Yolo
-from app.sandi.quotes.quote_rec         import Quotes
-from app.sandi.glove.glove              import GloveVectors
-from app.sandi.google.images            import ImageSearch
+from app.sandi.yolo.yolo import Yolo
+from app.sandi.quotes.quote_rec import Quotes
+from app.sandi.glove.glove import GloveVectors
+from app.sandi.google.images import ImageSearch
+
 
 class SandiWorkflow:
     """Runs the YOLOV2, Scene Detection,
@@ -28,17 +24,17 @@ class SandiWorkflow:
     Returns:
         None
     """
-    SANDI_ALIGNMENT_URI  = app.config.get('SANDI_ALIGNMENT_URI')
-    TEMP_DATA_PATH       = app.config.get('TEMP_DATA_PATH')
-    FILENAME_TAGS        = app.config.get('FILENAME_TAGS')
-    FILENAME_TEXT        = app.config.get('FILENAME_TEXT')
-    FILENAME_ALIGN       = app.config.get('FILENAME_ALIGN')
-    TAGS_DELIM           = app.config.get('TAGS_DELIM')
-    IMAGES_FOLDER        = app.config.get('IMAGES_FOLDER')
+    SANDI_ALIGNMENT_URI = app.config.get('SANDI_ALIGNMENT_URI')
+    TEMP_DATA_PATH = app.config.get('TEMP_DATA_PATH')
+    FILENAME_TAGS = app.config.get('FILENAME_TAGS')
+    FILENAME_TEXT = app.config.get('FILENAME_TEXT')
+    FILENAME_ALIGN = app.config.get('FILENAME_ALIGN')
+    TAGS_DELIM = app.config.get('TAGS_DELIM')
+    IMAGES_FOLDER = app.config.get('IMAGES_FOLDER')
 
     def __init__(self, folder=None, story_id=None, num_images=0, num_texts=0,
-                 yolo_resources=None, scene_resources=None, quote_resources=None,
-                 glove_resources=None):
+                 yolo_resources=None, scene_resources=None,
+                 quote_resources=None, glove_resources=None):
         """Initialization
 
         Initializes the models and neural nets.
@@ -52,22 +48,22 @@ class SandiWorkflow:
         quote_resources (tuple, optional): Defaults to None.
             (model, neural_net, captions, vectors)
         """
-        self.folder             = folder
-        self.story_id           = story_id
-        self.alignments         = dict()
-        self.image_names        = list()
-        self.num_images         = num_images
-        self.num_texts          = num_texts
-        self.yolo_resources     = yolo_resources
-        self.scene_resources    = scene_resources
-        self.quote_resources    = quote_resources
-        self.glove_resources    = glove_resources
-        self.yolo               = Yolo(self.yolo_resources)
-        # self.scene              = SceneDetection(self.scene_resources)
-        self.quote              = Quotes(self.quote_resources)
-        self.glove              = GloveVectors(self.glove_resources)
-        self.google_images      = ImageSearch()
-        self.mime               = Magic(mime=True)
+        self.folder = folder
+        self.story_id = story_id
+        self.alignments = dict()
+        self.image_names = list()
+        self.num_images = num_images
+        self.num_texts = num_texts
+        self.yolo_resources = yolo_resources
+        self.scene_resources = scene_resources
+        self.quote_resources = quote_resources
+        self.glove_resources = glove_resources
+        self.yolo = Yolo(self.yolo_resources)
+        # self.scene = SceneDetection(self.scene_resources)
+        self.quote = Quotes(self.quote_resources)
+        self.glove = GloveVectors(self.glove_resources)
+        self.google_images = ImageSearch()
+        self.mime = Magic(mime=True)
 
         app.logger.info('Initiating SANDI pipeline')
 
@@ -82,7 +78,8 @@ class SandiWorkflow:
                 raise e
         elif self.story_id:
             app.logger.debug('Retrieving image names using story id param')
-            self.folder = os.path.join(SandiWorkflow.TEMP_DATA_PATH, self.story_id)
+            self.folder = os.path.join(
+                SandiWorkflow.TEMP_DATA_PATH, self.story_id)
 
             # Retrieve image names
             try:
@@ -109,22 +106,24 @@ class SandiWorkflow:
         """
         app.logger.info('Retrieving tags from images')
 
-        yolo_tags           = dict()
-        google_tags         = dict()
+        yolo_tags = dict()
+        google_tags = dict()
         images_missing_tags = list()
 
-        args_tags = (self.image_names, os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+        args_tags = (self.image_names, os.path.join(
+            self.folder, SandiWorkflow.IMAGES_FOLDER))
 
         if self.num_images > 0:
 
             pool = ThreadPool(2)
 
             # Obtain tags from the yolo and scene detection models
-            yolo_thread   = pool.apply_async(self.yolo.run, args_tags)
+            yolo_thread = pool.apply_async(self.yolo.run, args_tags)
             google_thread = pool.apply_async(self.google_images.run, args_tags)
-            # scene_detection_thread = pool.apply_async(self.scene.run, args_tags)
+            # scene_detection_thread = pool.apply_async(
+            #     self.scene.run, args_tags)
 
-            yolo_tags   = yolo_thread.get()
+            yolo_tags = yolo_thread.get()
             google_tags = google_thread.get()
             # scene_detection_tags = self.scene.run(*args_tags)
 
@@ -140,7 +139,8 @@ class SandiWorkflow:
                 union_tags = set()
 
                 try:
-                    union_tags.update([tag.encode('ascii', 'replace') for tag in yolo_tags[file_name]])
+                    union_tags.update([tag.encode('ascii', 'replace')
+                                       for tag in yolo_tags[file_name]])
                 except KeyError:
                     pass
 
@@ -150,13 +150,16 @@ class SandiWorkflow:
                 #     pass
 
                 try:
-                    union_tags.update([tag.encode('ascii', 'replace') for tag in google_tags[file_name]])
+                    union_tags.update([tag.encode('ascii', 'replace')
+                                       for tag in google_tags[file_name]])
                 except KeyError:
                     pass
 
-                union_tags = [tag.strip().replace(' ', '_') for tag in union_tags]
+                union_tags = [tag.strip().replace(' ', '_')
+                              for tag in union_tags]
 
-                tags = SandiWorkflow.TAGS_DELIM.join(union_tags) or SandiWorkflow.TAGS_DELIM
+                tags = SandiWorkflow.TAGS_DELIM.join(
+                    union_tags) or SandiWorkflow.TAGS_DELIM
 
                 f.write('{file_name}\t{tags}\n'
                         .format(file_name=file_name, tags=tags))
@@ -167,7 +170,7 @@ class SandiWorkflow:
                 if not union_tags:
                     images_missing_tags.append(file_name)
 
-        app.logger.info('Finished retrieving tags from images with {num_missing} images missing tags'
+        app.logger.info('Finished retrieving tags {num_missing} missing'
                         .format(num_missing=len(images_missing_tags)))
 
         return images_missing_tags
@@ -183,11 +186,17 @@ class SandiWorkflow:
         if space_images_evenly:
             params['space_images_evenly'] = space_images_evenly
 
-        app.logger.debug("Alignment parameters are: working directory: {work_dir}, number images {num_images}, space images evenly {space_images_evenly}"
-                         .format(work_dir=self.folder, num_images=self.num_images, space_images_evenly=space_images_evenly))
+        app.logger.debug('Alignment parameters are:')
+        app.logger.debug(
+            'Working directory: {work_dir}'.format(work_dir=self.folder))
+        app.logger.debug('Number images {num_images}'.format(
+            num_images=self.num_images))
+        app.logger.debug('Space images evenly {space_images_evenly}'
+                         .format(space_images_evenly=space_images_evenly))
 
         try:
-            response = requests.get(url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
+            requests.get(
+                url=SandiWorkflow.SANDI_ALIGNMENT_URI, params=params)
         except Exception as e:
             app.logger.exception(e)
 
@@ -207,15 +216,15 @@ class SandiWorkflow:
 
         app.logger.info('Getting optimized alignments')
 
-        results        = list()
-        quote_used     = dict()
-        alignments     = dict()
-        alignment_path = os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)
+        results = list()
+        alignments = dict()
+        alignment_path = os.path.join(
+            self.folder, SandiWorkflow.FILENAME_ALIGN)
 
         # Check that alignment file exists
         if not os.path.exists(alignment_path):
-            raise Exception('file "{path}" does not exist' \
-                .format(path=alignment_path))
+            raise Exception(
+                'file "{path}" does not exist'.format(path=alignment_path))
 
         # Read alignments from alignments.txt
         with open(alignment_path) as f:
@@ -238,10 +247,11 @@ class SandiWorkflow:
         """
         app.logger.info('Getting randomized alignments')
 
-        alignments  = dict()
+        alignments = dict()
 
         # sample random numbers
-        random_samples = random.sample(range(0, self.num_texts-1), self.num_images)
+        random_samples = random.sample(
+            range(0, self.num_texts-1), self.num_images)
 
         for image_ind, para_ind in enumerate(random_samples):
             alignments[para_ind] = self.image_names[image_ind]
@@ -265,9 +275,9 @@ class SandiWorkflow:
         """
         app.logger.info('Aligning images and texts')
 
-        paragraphs  = list()
-        results     = list()
-        quote_used  = dict()
+        paragraphs = list()
+        results = list()
+        quote_used = dict()
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'r') as f:
             paragraphs = [line.decode('utf8').split('\t').pop() for line in f]
@@ -278,16 +288,17 @@ class SandiWorkflow:
         """
         for i, paragraph in enumerate(paragraphs):
 
-            result = {'paragraph' : paragraph,
-                      'file_name' : None,
-                      'quote'     : None
-                    }
+            result = {'paragraph': paragraph,
+                      'file_name': None,
+                      'quote': None
+                      }
 
             results.append(result)
 
             if i in alignments:
 
-                app.logger.debug('Appending {image} to paragraph {para}'.format(image=alignments[i], para=i))
+                app.logger.debug('Appending {image} to paragraph {para}'
+                                 .format(image=alignments[i], para=i))
 
                 file_name = alignments[i]
 
@@ -298,12 +309,13 @@ class SandiWorkflow:
                 """
                 if quotes:
 
-                    result['quote'] = self.get_best_quote(paragraph, quotes[file_name], quote_used)
+                    result['quote'] = self.get_best_quote(
+                        paragraph, quotes[file_name], quote_used)
 
-                    app.logger.debug('Appending quote {quote} with {file_name} to \
-                                        paragraphs {i}'.format(quote=result['quote'],
-                                                                file_name=result['file_name'],
-                                                                i=i))
+                    app.logger.debug(
+                        'Appending quote {file_name} to para {i}'
+                        .format(quote=result['quote'],
+                                file_name=result['file_name'], i=i))
 
         app.logger.info('Finished aligning images and texts')
 
@@ -322,7 +334,8 @@ class SandiWorkflow:
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
             for line in f:
                 line_split = line.split('\t')
-                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(SandiWorkflow.TAGS_DELIM)])
+                line_tags = line_split.pop().split(SandiWorkflow.TAGS_DELIM)
+                image_tags = filter(None, [tag.strip() for tag in line_tags])
                 image_name = line_split.pop()
 
                 tags[image_name] = ', '.join(image_tags)
@@ -345,13 +358,13 @@ class SandiWorkflow:
         and append to results
         """
         for image_name in self.image_names:
-            image_info = dict()
-            image_path = os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, image_name)
+            image_path = os.path.join(
+                self.folder, SandiWorkflow.IMAGES_FOLDER, image_name)
 
             with open(image_path, 'r') as image:
                 images[image_name] = {
-                    'data'      : base64.b64encode(image.read()).decode('ascii'),
-                    'type'      : self.mime.from_file(image_path),
+                    'data': base64.b64encode(image.read()).decode('ascii'),
+                    'type': self.mime.from_file(image_path),
                 }
 
         app.logger.info('Finished retrieving images')
@@ -403,9 +416,9 @@ class SandiWorkflow:
             str: quote most related to paragraph and not chosen before
         """
 
-        top_score        = 0.0
-        top_quote        = None
-        vector_quote     = None
+        top_score = 0.0
+        top_quote = None
+        vector_quote = None
         vector_paragraph = self.glove.sentence_to_vec(paragraph)
 
         for quote in quotes:
@@ -414,8 +427,8 @@ class SandiWorkflow:
             if quote in quote_used:
                 continue
 
-            vector_quote    = self.glove.sentence_to_vec(quote)
-            score           = self.glove.cosine(vector_paragraph, vector_quote)
+            vector_quote = self.glove.sentence_to_vec(quote)
+            score = self.glove.cosine(vector_paragraph, vector_quote)
 
             # update quote with closest match
             if score > top_score:
@@ -431,17 +444,19 @@ class SandiWorkflow:
             dict: map image-paragraph cosine similarities for each image
         """
 
-        app.logger.info('Starting to retrieve cosine similarities between text and images')
+        app.logger.info(
+            'Starting to retrieve cosine similarities between text and images')
 
-        cosine_similarities      = dict()
-        alignments               = dict()
+        cosine_similarities = dict()
+        alignments = dict()
         cosine_similarities_path = os.path.join(self.folder, 'cosine.txt')
-        alignment_path           = os.path.join(self.folder, SandiWorkflow.FILENAME_ALIGN)
+        alignment_path = os.path.join(
+            self.folder, SandiWorkflow.FILENAME_ALIGN)
 
         # Check that alignment file exists
         if not os.path.exists(alignment_path):
-            raise Exception('file "{path}" does not exist' \
-                .format(path=alignment_path))
+            raise Exception(
+                'file "{path}" does not exist'.format(path=alignment_path))
 
         # Read alignments from alignments.txt
         with open(alignment_path) as f:
@@ -460,13 +475,14 @@ class SandiWorkflow:
             """
             for image_name, para_cosine_map in cosine_similarities.items():
                 cosine_similarities[image_name] = list()
-                indices = sorted(para_cosine_map.keys(), key=lambda para: int(para))
+                indices = sorted(para_cosine_map.keys(),
+                                 key=lambda para: int(para))
                 for indice in indices:
-                    cosine  = para_cosine_map[indice]
-                    color   = self.cosine_to_256(cosine)
-                    red     = 255 - color
-                    green   = color
-                    blue    = 0
+                    cosine = para_cosine_map[indice]
+                    color = self.cosine_to_256(cosine)
+                    red = 255 - color
+                    green = color
+                    blue = 0
                     aligned = False
 
                     try:
@@ -476,17 +492,20 @@ class SandiWorkflow:
                         pass
 
                     cosine_similarity = {
-                        'cosine'  : '{0:.3f}'.format(cosine),
-                        'color'   : '#{0:02x}{1:02x}{2:02x}'.format(red, green, blue),
-                        'aligned' : aligned
+                        'cosine': '{0:.3f}'.format(cosine),
+                        'color': '#{0:02x}{1:02x}{2:02x}'.format(
+                            red, green, blue),
+                        'aligned': aligned
                     }
 
                     cosine_similarities[image_name].append(cosine_similarity)
 
-        except IOError as e:
-            app.logger.warn('Cosine similarities path DNE: {path}'.format(path=cosine_similarities_path))
+        except IOError:
+            app.logger.warn('Cosine similarities path DNE: {path}'.format(
+                path=cosine_similarities_path))
 
-        app.logger.info('Finished retrieving cosine similarities between text and images')
+        app.logger.info(
+            'Finished retrieving cosine similarities between text and images')
 
         return cosine_similarities
 
@@ -499,14 +518,15 @@ class SandiWorkflow:
         Returns:
             int: cosine normalized to range [0, 256]
         """
-        color  = round(255 * (cosine + 1.0) / 2.0)
+        color = round(255 * (cosine + 1.0) / 2.0)
         return int(max(0, min(color, 255)))
 
     def get_topk_concepts(self):
 
-        app.logger.info('Starting to retrieve top-k concepts between text and images')
+        app.logger.info(
+            'Starting to retrieve top-k concepts between text and images')
 
-        topk_concepts      = dict()
+        topk_concepts = dict()
         topk_concepts_path = os.path.join(self.folder, 'topkParaConcept.txt')
 
         try:
@@ -519,12 +539,12 @@ class SandiWorkflow:
             each image
             """
             for image_name, concepts in topk_concepts.items():
-                concepts = [concept.encode('ascii', 'replace') for concept in concepts]
+                concepts = [concept.encode('ascii', 'replace')
+                            for concept in concepts]
 
-                # TODO: remove hard-coded 'a'
                 try:
                     concepts.remove('a')
-                except ValueError as e:
+                except ValueError:
                     pass
                 except Exception as e:
                     app.logger.warn('Unhandled exception')
@@ -532,10 +552,12 @@ class SandiWorkflow:
 
                 topk_concepts[image_name] = ', '.join(concepts)
 
-        except IOError as e:
-            app.logger.warn('Top-k concepts path DNE: {path}'.format(path=topk_concepts_path))
+        except IOError:
+            app.logger.warn(
+                'Top-k concepts DNE: {path}'.format(path=topk_concepts_path))
 
-        app.logger.info('Finished retrieving top-k concepts between text and images')
+        app.logger.info(
+            'Finished retrieving top-k concepts between text and images')
 
         return topk_concepts
 
@@ -549,13 +571,15 @@ class SandiWorkflow:
 
         for upload in uploaded_images:
 
-            upload.save(os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER, upload.filename))
+            upload.save(os.path.join(
+                self.folder, SandiWorkflow.IMAGES_FOLDER, upload.filename))
 
             self.image_names.append(upload.filename)
 
         self.num_images = len(self.image_names)
 
-        app.logger.info('Collected {num_images} images'.format(num_images=len(uploaded_images)))
+        app.logger.info('Collected {num_images} images'.format(
+            num_images=len(uploaded_images)))
 
         return self.num_images
 
@@ -576,9 +600,11 @@ class SandiWorkflow:
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'w') as f:
             for index, paragraph in enumerate(paragraphs):
-                f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
+                f.write('{index}\t{paragraph}\n'.format(
+                    index=index+1, paragraph=paragraph.encode('utf8')))
 
-        app.logger.info('Collected {num_texts} paragraphs'.format(num_texts=self.num_texts))
+        app.logger.info('Collected {num_texts} paragraphs'.format(
+            num_texts=self.num_texts))
 
         return self.num_texts
 
@@ -594,9 +620,11 @@ class SandiWorkflow:
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TEXT), 'w') as f:
             for index, paragraph in enumerate(paragraphs):
-                f.write('{index}\t{paragraph}\n'.format(index=index+1, paragraph=paragraph.encode('utf8')))
+                f.write('{index}\t{paragraph}\n'.format(
+                    index=index+1, paragraph=paragraph.encode('utf8')))
 
-        app.logger.info('Collected {num_texts} paragraphs'.format(num_texts=self.num_texts))
+        app.logger.info('Collected {num_texts} paragraphs'.format(
+            num_texts=self.num_texts))
 
         return self.num_texts
 
@@ -627,28 +655,38 @@ class SandiWorkflow:
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'r') as f:
             for line in f:
                 line_split = line.split('\t')
-                image_tags = filter(None, [tag.strip() for tag in line_split.pop().split(SandiWorkflow.TAGS_DELIM)])
+                line_tags = line_split.pop().split(SandiWorkflow.TAGS_DELIM)
+                image_tags = filter(None, [tag.strip() for tag in line_tags])
                 image_name = line_split.pop()
 
                 try:
-                    uploaded_tags = filter(None, [tag.strip().replace(' ', '_') for tag in user_tags[image_name].split(SandiWorkflow.TAGS_DELIM)])
-                except:
+                    user_image_tags = user_tags[image_name].split(
+                        SandiWorkflow.TAGS_DELIM)
+                    uploaded_tags = filter(None, [tag.strip().replace(
+                        ' ', '_') for tag in user_image_tags])
+                except Exception:
                     pass
 
                 if image_name in user_tags and uploaded_tags:
-                    app.logger.debug('Using uploaded tags for image {image_name}: {tags}'.format(image_name=image_name, tags=uploaded_tags))
+                    app.logger.debug(
+                        'Using uploaded tags for {image_name}'
+                        .format(image_name=image_name))
                     full_tags[image_name] = uploaded_tags
                 elif image_tags:
-                    app.logger.debug('Using current tags for image {image_name}: {tags}'.format(image_name=image_name, tags=image_tags))
+                    app.logger.debug('Using current tags for {image_name}'
+                                     .format(image_name=image_name))
                     full_tags[image_name] = image_tags
                 else:
-                    app.logger.debug('No tags for image {image_name}'.format(image_name=image_name))
+                    app.logger.debug(
+                        'No tags for {image_name}'
+                        .format(image_name=image_name))
                     full_tags[image_name] = list()
 
         with open(os.path.join(self.folder, SandiWorkflow.FILENAME_TAGS), 'w') as f:
             for file_name, tags in full_tags.items():
 
-                new_tags = SandiWorkflow.TAGS_DELIM.join(tags) or SandiWorkflow.TAGS_DELIM
+                new_tags = SandiWorkflow.TAGS_DELIM.join(
+                    tags) or SandiWorkflow.TAGS_DELIM
 
                 f.write('{file_name}\t{tags}\n'
                         .format(file_name=file_name, tags=new_tags))
@@ -666,14 +704,17 @@ class SandiWorkflow:
         self.story_id = 0
         while True:
             try:
-                self.folder = os.path.join(SandiWorkflow.TEMP_DATA_PATH, str(self.story_id))
+                self.folder = os.path.join(
+                    SandiWorkflow.TEMP_DATA_PATH, str(self.story_id))
                 os.mkdir(self.folder)
-                os.mkdir(os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
+                os.mkdir(
+                    os.path.join(self.folder, SandiWorkflow.IMAGES_FOLDER))
                 break
             except OSError:
                 self.story_id += 1
 
-        app.logger.debug('Data directory created at {dir}'.format(dir=self.folder))
+        app.logger.debug(
+            'Data directory created at {dir}'.format(dir=self.folder))
 
     def clean_up(self):
         """Remove transient folder
