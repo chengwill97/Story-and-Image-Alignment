@@ -1,4 +1,5 @@
-<Context reloadable="true">
+<Context displayName="SandiOptimizer"
+    reloadable="true">
 
 	<Environment name="model_path" value="/home/willc97/dev/python2.7/SANDI/model.imgDesc.txt" type="java.lang.String"/>
 	<Environment name="postagger_path" value="/home/willc97/dev/python2.7/SANDI/resources/stanford-postagger-full-2017-06-09/models/english-bidirectional-distsim.tagger" type="java.lang.String"/>
