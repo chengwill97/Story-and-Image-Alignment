@@ -9,23 +9,25 @@ from app.sandi.quotes.visual_semantic_embedding import demo
 from app.sandi.quotes.visual_semantic_embedding import tools
 from app.sandi.quotes.visual_semantic_embedding import datasets
 
+
 class Quotes:
     """Runs the quote reccomendation application
 
     Returns:
         None
     """
-    VSC_CAPTIONS        = os.environ['VSC_CAPTIONS']
-    VSC_VGG             = os.environ['VSC_VGG']
-    VSC_MODEL           = os.environ['VSC_MODEL']
-    VSC_DICTIONARY      = os.environ['VSC_DICTIONARY']
-    VSC_MODEL_OPTIONS   = os.environ['VSC_MODEL_OPTIONS']
+    VSC_CAPTIONS = app.config.get('VSC_CAPTIONS')
+    VSC_VGG = app.config.get('VSC_VGG')
+    VSC_MODEL = app.config.get('VSC_MODEL')
+    VSC_DICTIONARY = app.config.get('VSC_DICTIONARY')
+    VSC_MODEL_OPTIONS = app.config.get('VSC_MODEL_OPTIONS')
 
     def __init__(self, quotes_resources):
         """Initializes resources for quote reccomendation
 
         Args:
-            quotes_resources (tuple): (model, neural_network, captions, vectors)
+            quotes_resources (tuple): (model, neural_network,
+                captions, vectors)
         """
         self.quotes_resources = quotes_resources
         self.detokenizer = Detok()
@@ -47,7 +49,6 @@ class Quotes:
         model, net, captions, vectors = self.quotes_resources
 
         quote_recs = dict()
-        quote_used = dict()
 
         for filename in filenames:
             image = os.path.join(images_dir, filename)
@@ -87,7 +88,8 @@ class Quotes:
 
         captions = datasets.load_captions(Quotes.VSC_CAPTIONS)
         net = demo.build_convnet(Quotes.VSC_VGG)
-        model = tools.load_model(Quotes.VSC_DICTIONARY, Quotes.VSC_MODEL_OPTIONS, Quotes.VSC_MODEL)
+        model = tools.load_model(
+            Quotes.VSC_DICTIONARY, Quotes.VSC_MODEL_OPTIONS, Quotes.VSC_MODEL)
 
         vectors = tools.encode_sentences(model, captions, verbose=False)
 

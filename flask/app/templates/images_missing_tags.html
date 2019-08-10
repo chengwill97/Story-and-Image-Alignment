@@ -34,7 +34,7 @@
 
     {% if images_missing_tags %}
 
-        <form method="post" id="input_form" action="{{ url_for('demo') }}" enctype="multipart/form-data">
+        <form method="post" id="input_form" action="{{ url_for('process_demo') }}" enctype="multipart/form-data">
 
             {% for image_missing_tags in images_missing_tags %}
 

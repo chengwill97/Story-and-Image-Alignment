@@ -1,6 +1,5 @@
+from app import app
 import os
-import re
-import csv
 import pandas as pd
 import numpy as np
 from numpy import array
@@ -8,10 +7,11 @@ from math import sqrt
 import nltk
 nltk.download('punkt')
 
+
 class GloveVectors:
 
-    DIMENSION = int(os.environ['DIMENSION'])
-    GLOVE_DEFAULT_MODEL = os.environ['GLOVE_DEFAULT_MODEL']
+    DIMENSION = int(app.config.get('DIMENSION'))
+    GLOVE_DEFAULT_MODEL = app.config.get('GLOVE_DEFAULT_MODEL')
 
     def __init__(self, model):
         self.model = model
@@ -20,7 +20,7 @@ class GloveVectors:
     def load_resources():
         """Loads in the glove vectors
         """
-        model      = dict()
+        model = dict()
         glove_path = GloveVectors.GLOVE_DEFAULT_MODEL
 
         if os.path.exists(glove_path):
@@ -45,8 +45,8 @@ class GloveVectors:
         """
 
         dot_prod = sum(A * B)
-        mag_A    = sqrt(sum(A * A))
-        mag_B    = sqrt(sum(B * B))
+        mag_A = sqrt(sum(A * A))
+        mag_B = sqrt(sum(B * B))
 
         return dot_prod / (mag_A * mag_B)
 
@@ -106,15 +106,16 @@ class GloveVectors:
         Returns:
             pandas.DataFrame: words in df and their cosine similarity to word
         """
-        myvec     = array(df.loc[word])
-        words     = df.index
+        myvec = array(df.loc[word])
+        words = df.index
         cos_words = list()
         for i in range(len(df)):
             # acquire the vector representation of the word
             vec = array(df.iloc[i])
             # calculate the cosine similarity
             cos_sim = self.cosine(myvec, vec)
-            # append the cosine similarity of the word and the word siteself to the list
+            # append the cosine similarity of the word
+            # and the word itself to the list
             cos_words.append([cos_sim, words[i]])
 
         # Transform the sorted_cos_words list to put it in the dataframe
@@ -125,8 +126,8 @@ class GloveVectors:
 
         # Create the dataframe
         cos_words_df = pd.DataFrame({
-            'Cosine Similarity' : sorted_cos_words[0],
-            'Word'              : sorted_cos_words[1]
+            'Cosine Similarity': sorted_cos_words[0],
+            'Word': sorted_cos_words[1]
         })
 
         return cos_words_df
@@ -148,7 +149,8 @@ class GloveVectors:
             vec = array(df.iloc[i])
             # calculate the cosine similarity
             cos_sim = self.cosine(myvec, vec)
-            # append the cosine similarity of the word and the word siteself to the list
+            # append the cosine similarity of the word
+            # and the word itself to the list
             cos_words.append([cos_sim, words[i]])
 
         # Transform the sorted_cos_words list to put it in the dataframe
@@ -158,8 +160,8 @@ class GloveVectors:
         sorted_cos_words = np.transpose(sorted_cos_words)
         # Create the dataframe
         cos_words_df = pd.DataFrame({
-            'Cosine Similarity' :sorted_cos_words[0],
-            'Word'              :sorted_cos_words[1]
+            'Cosine Similarity': sorted_cos_words[0],
+            'Word': sorted_cos_words[1]
         })
 
         return cos_words_df
