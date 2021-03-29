@@ -52,7 +52,7 @@ protobuf==3.1.0.post1
 ptyprocess==0.6.0
 pycparser==2.19
 pycurl==7.43.0.2
-Pygments==2.2.0
+Pygments==2.7.4
 pyOpenSSL==18.0.0
 pyparsing==2.3.0
 PySocks==1.6.8
